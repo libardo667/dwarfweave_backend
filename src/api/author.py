@@ -69,6 +69,24 @@ def author_commit(payload: SuggestResp, db: Session = Depends(get_db)):
         db.add(row)
         count += 1
     db.commit()
+    
+    # Auto-improve storylets after adding new ones
+    from ..services.auto_improvement import auto_improve_storylets, should_run_auto_improvement, get_improvement_summary
+    
+    if should_run_auto_improvement(count, "author-commit"):
+        improvement_results = auto_improve_storylets(
+            db=db, 
+            trigger=f"author-commit ({count} storylets)",
+            run_smoothing=True,
+            run_deepening=True
+        )
+        
+        return {
+            "added": count,
+            "auto_improvements": get_improvement_summary(improvement_results),
+            "improvement_details": improvement_results
+        }
+    
     return {"added": count}
 
 
@@ -78,12 +96,30 @@ def populate_storylets(target_count: int = 20, db: Session = Depends(get_db)):
     try:
         added = auto_populate_storylets(db, target_count)
         current_count = db.query(Storylet).count()
-        return {
+        
+        # Auto-improve storylets after population
+        from ..services.auto_improvement import auto_improve_storylets, should_run_auto_improvement, get_improvement_summary
+        
+        base_response = {
             "success": True,
             "added": added,
             "total_storylets": current_count,
             "message": f"Added {added} new storylets. Total: {current_count}"
         }
+        
+        if should_run_auto_improvement(added, "populate-storylets"):
+            improvement_results = auto_improve_storylets(
+                db=db,
+                trigger=f"populate-storylets ({added} storylets)",
+                run_smoothing=True,
+                run_deepening=True
+            )
+            
+            base_response["auto_improvements"] = get_improvement_summary(improvement_results)
+            base_response["improvement_details"] = improvement_results
+        
+        return base_response
+        
     except Exception as e:
         logging.exception("Error populating storylets")
         raise HTTPException(status_code=500, detail={
@@ -170,11 +206,27 @@ def generate_intelligent_storylets(
         
         db.commit()
         
-        return {
+        # Auto-improve storylets after intelligent generation
+        from ..services.auto_improvement import auto_improve_storylets, should_run_auto_improvement, get_improvement_summary
+        
+        base_response = {
             "message": f"Generated {len(created_storylets)} intelligent storylets",
             "storylets": created_storylets,
             "ai_context": "Used storylet analysis to create targeted, coherent content"
         }
+        
+        if should_run_auto_improvement(len(created_storylets), "intelligent-generation"):
+            improvement_results = auto_improve_storylets(
+                db=db,
+                trigger=f"intelligent-generation ({len(created_storylets)} storylets)",
+                run_smoothing=True,
+                run_deepening=True
+            )
+            
+            base_response["auto_improvements"] = get_improvement_summary(improvement_results)
+            base_response["improvement_details"] = improvement_results
+        
+        return base_response
         
     except Exception as e:
         db.rollback()
@@ -267,11 +319,27 @@ def generate_targeted_storylets(db: Session = Depends(get_db)):
         
         db.commit()
         
-        return {
+        # Auto-improve storylets after targeted generation
+        from ..services.auto_improvement import auto_improve_storylets, should_run_auto_improvement, get_improvement_summary
+        
+        base_response = {
             "message": f"Generated {len(created_storylets)} targeted storylets",
             "storylets": created_storylets,
             "targeting_info": "These storylets specifically address connectivity gaps and flow issues"
         }
+        
+        if should_run_auto_improvement(len(created_storylets), "targeted-generation"):
+            improvement_results = auto_improve_storylets(
+                db=db,
+                trigger=f"targeted-generation ({len(created_storylets)} storylets)",
+                run_smoothing=True,
+                run_deepening=True
+            )
+            
+            base_response["auto_improvements"] = get_improvement_summary(improvement_results)
+            base_response["improvement_details"] = improvement_results
+        
+        return base_response
         
     except Exception as e:
         db.rollback()
@@ -377,15 +445,34 @@ def generate_world_from_description(
         print(f"🌍 Generated world with {len(generated_locations)} locations: {', '.join(generated_locations)}")
         print(f"🎭 Identified themes: {', '.join(generated_themes)}")
         
-        return {
+        # Auto-improve storylets after world generation
+        from ..services.auto_improvement import auto_improve_storylets, should_run_auto_improvement, get_improvement_summary
+        
+        total_storylets = len(storylets) + 1
+        base_response = {
             "success": True,
-            "message": f"🎉 Generated {len(storylets) + 1} storylets for your {world_description.theme} world!",
-            "storylets_created": len(storylets) + 1,
+            "message": f"🎉 Generated {total_storylets} storylets for your {world_description.theme} world!",
+            "storylets_created": total_storylets,
             "theme": world_description.theme,
             "player_role": world_description.player_role,
             "tone": world_description.tone,
             "storylets": created_storylets[:3]  # Return first 3 as preview
         }
+        
+        if should_run_auto_improvement(total_storylets, "world-generation"):
+            improvement_results = auto_improve_storylets(
+                db=db,
+                trigger=f"world-generation ({total_storylets} storylets)",
+                run_smoothing=True,
+                run_deepening=True
+            )
+            
+            base_response["auto_improvements"] = get_improvement_summary(improvement_results)
+            base_response["improvement_details"] = improvement_results
+            
+            print(f"🤖 {get_improvement_summary(improvement_results)}")
+        
+        return base_response
         
     except Exception as e:
         db.rollback()

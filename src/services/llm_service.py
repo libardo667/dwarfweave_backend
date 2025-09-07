@@ -429,19 +429,21 @@ GENERATED WORLD ANALYSIS:
 Create a starting storylet that:
 1. INTRODUCES the world naturally and immersively
 2. SETS UP the player's role and situation 
-3. OFFERS CHOICES that lead to the actual locations in this world
+3. OFFERS CLEAR CHOICES that show exactly where they lead (use → notation)
 4. MATCHES the tone and themes perfectly
 5. FEELS like a natural entry point, not generic
+6. MAKES NAVIGATION TRANSPARENT - players should know where choices lead
 
 The choices should set the "location" variable to one of these actual locations: {available_locations}
+IMPORTANT: Include location previews in choice labels like "Explore the tavern (→ Tavern)" so players know where they're going.
 
 Return EXACTLY this JSON format:
 {{
     "title": "An engaging title that fits this specific world",
     "text": "Immersive opening text that brings the player into this world. Make it specific to the theme and description, not generic. Use {{player_role}} for the role.",
     "choices": [
-        {{"label": "Choice 1 leading to specific location", "set": {{"location": "{available_locations[0] if available_locations else 'start'}", "player_role": "{world_description.player_role}"}}}},
-        {{"label": "Choice 2 leading to different location", "set": {{"location": "{available_locations[1] if len(available_locations) > 1 else available_locations[0] if available_locations else 'start'}", "player_role": "{world_description.player_role}"}}}}
+        {{"label": "Choice 1 leading to specific location (→ {available_locations[0] if available_locations else 'start'})", "set": {{"location": "{available_locations[0] if available_locations else 'start'}", "player_role": "{world_description.player_role}"}}}},
+        {{"label": "Choice 2 leading to different location (→ {available_locations[1] if len(available_locations) > 1 else available_locations[0] if available_locations else 'start'})", "set": {{"location": "{available_locations[1] if len(available_locations) > 1 else available_locations[0] if available_locations else 'start'}", "player_role": "{world_description.player_role}"}}}}
     ]
 }}
 

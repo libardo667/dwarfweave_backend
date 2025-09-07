@@ -62,6 +62,7 @@ def pick_storylet(db: Session, vars: Dict[str, Any]) -> Optional[Storylet]:
             new_storylets_data = generate_contextual_storylets(vars, n=5)
             
             # Add new storylets to database
+            storylets_added = 0
             for storylet_data in new_storylets_data:
                 new_storylet = Storylet(
                     title=storylet_data.get("title", "Generated Story"),
@@ -71,9 +72,25 @@ def pick_storylet(db: Session, vars: Dict[str, Any]) -> Optional[Storylet]:
                     weight=storylet_data.get("weight", 1.0)
                 )
                 db.add(new_storylet)
+                storylets_added += 1
             
             # Commit and refresh our query
             db.commit()
+            
+            # Auto-improve storylets if we added a significant number
+            if storylets_added >= 3:
+                try:
+                    from ..services.auto_improvement import auto_improve_storylets
+                    auto_improve_storylets(
+                        db=db,
+                        trigger=f"contextual-generation ({storylets_added} storylets)",
+                        run_smoothing=True,
+                        run_deepening=True
+                    )
+                    print(f"🤖 Auto-improved storylets after adding {storylets_added} contextual storylets")
+                except Exception as improve_error:
+                    print(f"⚠️  Auto-improvement failed: {improve_error}")
+            
             all_rows = db.query(Storylet).all()
             eligible = [s for s in all_rows if meets_requirements(vars, cast(Dict[str, Any], s.requires or {}))]
             
@@ -194,6 +211,21 @@ def auto_populate_storylets(db: Session, target_count: int = 20) -> int:
                 added_count += 1
         
         db.commit()
+        
+        # Auto-improve storylets if we added a significant number
+        if added_count >= 3:
+            try:
+                from ..services.auto_improvement import auto_improve_storylets
+                auto_improve_storylets(
+                    db=db,
+                    trigger=f"auto-populate ({added_count} storylets)",
+                    run_smoothing=True,
+                    run_deepening=True
+                )
+                print(f"🤖 Auto-improved storylets after populating {added_count} storylets")
+            except Exception as improve_error:
+                print(f"⚠️  Auto-improvement failed: {improve_error}")
+        
         return added_count
         
     except Exception as e:
