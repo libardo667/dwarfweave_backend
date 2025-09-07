@@ -321,14 +321,45 @@ def generate_world_from_description(
                 "weight": storylet.weight
             })
         
-        # Always add a guaranteed starting storylet with no requirements
+        # Analyze the generated world to create a perfect starting storylet
+        generated_locations = set()
+        generated_themes = set()
+        
+        for storylet_data in storylets:
+            # Extract locations from requirements
+            requires = storylet_data.get("requires", {})
+            if "location" in requires:
+                generated_locations.add(requires["location"])
+            
+            # Extract themes from titles and content
+            title_lower = storylet_data["title"].lower()
+            text_lower = storylet_data["text"].lower()
+            
+            # Identify key themes
+            if any(word in title_lower or word in text_lower for word in ["forge", "craft", "create", "build"]):
+                generated_themes.add("crafting")
+            if any(word in title_lower or word in text_lower for word in ["market", "trade", "vendor", "buy", "sell"]):
+                generated_themes.add("commerce")
+            if any(word in title_lower or word in text_lower for word in ["ancient", "artifact", "old", "relic"]):
+                generated_themes.add("history")
+            if any(word in title_lower or word in text_lower for word in ["danger", "threat", "risk", "escape"]):
+                generated_themes.add("danger")
+            if any(word in title_lower or word in text_lower for word in ["clan", "rival", "family", "group"]):
+                generated_themes.add("social")
+        
+        # Generate a contextual starting storylet
+        from ..services.llm_service import generate_starting_storylet
+        starting_storylet_data = generate_starting_storylet(
+            world_description=world_description,
+            available_locations=list(generated_locations),
+            world_themes=list(generated_themes)
+        )
+        
+        # Create the dynamic starting storylet
         starting_storylet = Storylet(
-            title="A New Beginning",
-            text_template=f"You find yourself in the world of {world_description.theme}. Your adventure as a {world_description.player_role} begins now. {world_description.description[:100]}...",
-            choices=[
-                {"label": "Begin your journey", "set": {"location": "Gloomforge", "player_role": world_description.player_role}},
-                {"label": "Explore the markets", "set": {"location": "Neon Market", "player_role": world_description.player_role}}
-            ],
+            title=starting_storylet_data["title"],
+            text_template=starting_storylet_data["text"],
+            choices=starting_storylet_data["choices"],
             requires={},  # No requirements - always accessible
             weight=2.0    # Higher weight to be chosen more often
         )
@@ -342,6 +373,9 @@ def generate_world_from_description(
         })
         
         db.commit()
+        
+        print(f"🌍 Generated world with {len(generated_locations)} locations: {', '.join(generated_locations)}")
+        print(f"🎭 Identified themes: {', '.join(generated_themes)}")
         
         return {
             "success": True,

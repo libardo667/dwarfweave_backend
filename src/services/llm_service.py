@@ -401,3 +401,94 @@ Focus on creating an interconnected web of storylets where choices in one storyl
                 "weight": 1.0
             }
         ]
+
+
+def generate_starting_storylet(world_description, available_locations: list, world_themes: list) -> dict:
+    """Generate a perfect starting storylet based on the actual generated world."""
+    
+    try:
+        from openai import OpenAI
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        
+        # Build context about the generated world
+        locations_text = ", ".join(available_locations) if available_locations else "various locations"
+        themes_text = ", ".join(world_themes) if world_themes else "adventure"
+        
+        starting_prompt = f"""You are creating the perfect starting storylet for an interactive fiction world.
+
+WORLD CONTEXT:
+- Description: {world_description.description}
+- Theme: {world_description.theme}
+- Player Role: {world_description.player_role}
+- Tone: {world_description.tone}
+
+GENERATED WORLD ANALYSIS:
+- Available Locations: {locations_text}
+- World Themes: {themes_text}
+
+Create a starting storylet that:
+1. INTRODUCES the world naturally and immersively
+2. SETS UP the player's role and situation 
+3. OFFERS CHOICES that lead to the actual locations in this world
+4. MATCHES the tone and themes perfectly
+5. FEELS like a natural entry point, not generic
+
+The choices should set the "location" variable to one of these actual locations: {available_locations}
+
+Return EXACTLY this JSON format:
+{{
+    "title": "An engaging title that fits this specific world",
+    "text": "Immersive opening text that brings the player into this world. Make it specific to the theme and description, not generic. Use {{player_role}} for the role.",
+    "choices": [
+        {{"label": "Choice 1 leading to specific location", "set": {{"location": "{available_locations[0] if available_locations else 'start'}", "player_role": "{world_description.player_role}"}}}},
+        {{"label": "Choice 2 leading to different location", "set": {{"location": "{available_locations[1] if len(available_locations) > 1 else available_locations[0] if available_locations else 'start'}", "player_role": "{world_description.player_role}"}}}}
+    ]
+}}
+
+Make this feel like a natural, immersive beginning to THIS specific world, not a generic adventure start."""
+
+        response = client.chat.completions.create(
+            model=os.getenv("MODEL", "gpt-4o-mini"),
+            messages=[
+                {"role": "system", "content": "You are an expert at creating immersive, world-specific story openings that perfectly match the generated content."},
+                {"role": "user", "content": starting_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=800
+        )
+        
+        response_text = (response.choices[0].message.content or "").strip()
+        
+        # Extract JSON from response
+        json_start = response_text.find('{')
+        json_end = response_text.rfind('}') + 1
+        
+        if json_start == -1 or json_end == 0:
+            raise ValueError("No JSON found in starting storylet response")
+        
+        json_text = response_text[json_start:json_end]
+        starting_data = json.loads(json_text)
+        
+        # Validate and normalize
+        normalized_starting = {
+            "title": starting_data.get("title", "A New Beginning"),
+            "text": starting_data.get("text", f"You begin your adventure as a {{player_role}} in the world of {world_description.theme}."),
+            "choices": starting_data.get("choices", [
+                {"label": "Begin your journey", "set": {"location": available_locations[0] if available_locations else "start", "player_role": world_description.player_role}}
+            ])
+        }
+        
+        print(f"✅ Generated contextual starting storylet: '{normalized_starting['title']}'")
+        return normalized_starting
+        
+    except Exception as e:
+        print(f"⚠️ Error generating starting storylet, using fallback: {e}")
+        # Fallback starting storylet
+        return {
+            "title": "A New Beginning",
+            "text": f"You find yourself in the world of {{theme}}. Your adventure as a {{player_role}} begins now.",
+            "choices": [
+                {"label": "Begin your journey", "set": {"location": available_locations[0] if available_locations else "start", "player_role": world_description.player_role}},
+                {"label": "Take a moment to observe", "set": {"location": available_locations[1] if len(available_locations) > 1 else available_locations[0] if available_locations else "start", "player_role": world_description.player_role}}
+            ]
+        }

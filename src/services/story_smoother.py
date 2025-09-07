@@ -1,0 +1,406 @@
+"""
+Story Smoothing Algorithm
+Automatically detects and fixes narrative flow problems in storylet graphs.
+"""
+
+import sqlite3
+import json
+from collections import defaultdict, deque
+from typing import Dict, List, Set, Tuple, Optional
+import random
+
+
+class StorySmoother:
+    """
+    Recursive story graph analyzer and fixer.
+    Detects isolated locations, dead-end variables, and navigation bottlenecks,
+    then automatically generates fixes.
+    """
+    
+    def __init__(self, db_path: str = 'dwarfweave.db'):
+        self.db_path = db_path
+        self.storylets = []
+        self.locations = set()
+        self.location_storylets = defaultdict(list)
+        self.location_connections = defaultdict(set)
+        self.reverse_connections = defaultdict(set)
+        self.variables_required = defaultdict(list)  # var -> storylets that need it
+        self.variables_set = defaultdict(list)       # var -> storylets that set it
+        self.dead_end_vars = set()
+        self.isolated_locations = set()
+        self.one_way_connections = set()
+        
+    def load_storylets(self):
+        """Load all storylets from database."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, title, text_template, requires, choices, weight 
+            FROM storylets
+        """)
+        
+        self.storylets = []
+        for row in cursor.fetchall():
+            storylet = {
+                'id': row[0],
+                'title': row[1],
+                'text': row[2],
+                'requires': json.loads(row[3]) if row[3] else {},
+                'choices': json.loads(row[4]) if row[4] else [],
+                'weight': row[5]
+            }
+            self.storylets.append(storylet)
+        
+        conn.close()
+        print(f"📚 Loaded {len(self.storylets)} storylets")
+    
+    def analyze_graph(self):
+        """Analyze the storylet graph for problems."""
+        print("🔍 Analyzing storylet graph...")
+        
+        # Reset analysis data
+        self.locations.clear()
+        self.location_storylets.clear()
+        self.location_connections.clear()
+        self.reverse_connections.clear()
+        self.variables_required.clear()
+        self.variables_set.clear()
+        
+        # Analyze each storylet
+        for storylet in self.storylets:
+            # Extract location
+            location = storylet['requires'].get('location', 'No Location')
+            self.locations.add(location)
+            self.location_storylets[location].append(storylet)
+            
+            # Track variable requirements
+            for var, value in storylet['requires'].items():
+                if var != 'location':
+                    self.variables_required[var].append(storylet)
+            
+            # Analyze choices for connections and variable setting
+            for choice in storylet['choices']:
+                choice_sets = choice.get('set', {})
+                
+                # Track variables being set
+                for var, value in choice_sets.items():
+                    if var != 'location':
+                        self.variables_set[var].append((storylet, choice))
+                
+                # Track location connections
+                new_location = choice_sets.get('location')
+                if new_location and new_location != location:
+                    self.location_connections[location].add(new_location)
+                    self.reverse_connections[new_location].add(location)
+        
+        self._identify_problems()
+    
+    def _identify_problems(self):
+        """Identify specific problems in the story graph."""
+        # Find dead-end variables
+        all_set_vars = set(self.variables_set.keys())
+        all_required_vars = set(self.variables_required.keys())
+        self.dead_end_vars = all_set_vars - all_required_vars
+        
+        # Find isolated locations (no incoming or outgoing connections)
+        self.isolated_locations = set()
+        for location in self.locations:
+            has_outgoing = len(self.location_connections[location]) > 0
+            has_incoming = len(self.reverse_connections[location]) > 0
+            
+            if not has_outgoing and not has_incoming and location != 'No Location':
+                self.isolated_locations.add(location)
+        
+        # Find one-way connections
+        self.one_way_connections = set()
+        for from_loc, to_locs in self.location_connections.items():
+            for to_loc in to_locs:
+                if from_loc not in self.location_connections.get(to_loc, set()):
+                    self.one_way_connections.add((from_loc, to_loc))
+        
+        print(f"⚠️  Found {len(self.dead_end_vars)} dead-end variables")
+        print(f"🏝️ Found {len(self.isolated_locations)} isolated locations")
+        print(f"➡️  Found {len(self.one_way_connections)} one-way connections")
+    
+    def generate_exit_choices(self, storylet: Dict, target_locations: List[str]) -> List[Dict]:
+        """Generate exit choices for a storylet to connect it to other locations."""
+        exit_choices = []
+        
+        current_location = storylet['requires'].get('location', 'No Location')
+        
+        for target_location in target_locations:
+            if target_location != current_location:
+                # Generate thematic choice text based on locations
+                choice_text = self._generate_travel_text(current_location, target_location)
+                
+                exit_choice = {
+                    "text": choice_text,
+                    "set": {"location": target_location},
+                    "condition": None
+                }
+                exit_choices.append(exit_choice)
+        
+        return exit_choices
+    
+    def _generate_travel_text(self, from_loc: str, to_loc: str) -> str:
+        """Generate thematic travel text between locations."""
+        travel_phrases = {
+            ('Clan Hall', 'Neon Caverns'): "Venture into the glowing depths of the caverns",
+            ('Clan Hall', 'Corporate Stronghold'): "March toward the corporate district",
+            ('Clan Hall', 'Old Clan Library'): "Return to the ancient archives",
+            ('Clan Hall', 'Rusted Halls'): "Explore the abandoned industrial sector",
+            
+            ('Neon Caverns', 'Clan Hall'): "Return to the clan gathering place",
+            ('Neon Caverns', 'Corporate Stronghold'): "Ascend to the corporate towers",
+            ('Neon Caverns', 'Old Clan Library'): "Seek knowledge in the old archives",
+            ('Neon Caverns', 'Rusted Halls'): "Investigate the rusted machinery",
+            
+            ('Corporate Stronghold', 'Clan Hall'): "Retreat to clan territory",
+            ('Corporate Stronghold', 'Neon Caverns'): "Descend into the neon-lit depths",
+            ('Corporate Stronghold', 'Old Clan Library'): "Research in the ancient library",
+            ('Corporate Stronghold', 'Rusted Halls'): "Investigate the industrial ruins",
+            
+            ('Old Clan Library', 'Clan Hall'): "Return to the main clan area",
+            ('Old Clan Library', 'Neon Caverns'): "Venture into the illuminated caverns",
+            ('Old Clan Library', 'Corporate Stronghold'): "Confront the corporate power",
+            ('Old Clan Library', 'Rusted Halls'): "Explore the forgotten machinery",
+            
+            ('Rusted Halls', 'Clan Hall'): "Head back to clan territory",
+            ('Rusted Halls', 'Neon Caverns'): "Enter the glowing underground",
+            ('Rusted Halls', 'Corporate Stronghold'): "Challenge the corporate authority",
+            ('Rusted Halls', 'Old Clan Library'): "Consult the ancient texts",
+        }
+        
+        # Try to find specific travel text
+        specific_text = travel_phrases.get((from_loc, to_loc))
+        if specific_text:
+            return specific_text
+        
+        # Generate generic travel text
+        generic_travels = [
+            f"Travel to {to_loc}",
+            f"Journey toward {to_loc}",
+            f"Head to {to_loc}",
+            f"Move to {to_loc}",
+            f"Explore {to_loc}"
+        ]
+        
+        return random.choice(generic_travels)
+    
+    def generate_variable_requirement_storylets(self) -> List[Dict]:
+        """Generate new storylets that require the dead-end variables."""
+        new_storylets = []
+        
+        for var in self.dead_end_vars:
+            # Find where this variable is set to understand its purpose
+            setting_storylets = self.variables_set[var]
+            if not setting_storylets:
+                continue
+            
+            # Analyze the variable to create thematic requirements
+            storylet_title, storylet_text = self._generate_variable_storylet(var, setting_storylets)
+            
+            # Choose a location that makes sense for this variable
+            target_location = self._choose_location_for_variable(var)
+            
+            new_storylet = {
+                'title': storylet_title,
+                'text_template': storylet_text,
+                'requires': {
+                    'location': target_location,
+                    var: 1  # Require the variable to be set
+                },
+                'choices': [
+                    {
+                        "text": "Continue your journey",
+                        "set": {},
+                        "condition": None
+                    }
+                ],
+                'weight': 1.0
+            }
+            
+            new_storylets.append(new_storylet)
+            print(f"📝 Generated storylet requiring '{var}' in {target_location}")
+        
+        return new_storylets
+    
+    def _generate_variable_storylet(self, var: str, setting_info: List[Tuple]) -> Tuple[str, str]:
+        """Generate storylet content based on the variable type."""
+        var_themes = {
+            'corp_reputation': {
+                'title': 'Corporate Recognition',
+                'text': 'Your reputation within the corporate hierarchy opens new doors. Security nodes recognize your clearance level and grant access to restricted areas.'
+            },
+            'quantum_weaving_skill': {
+                'title': 'Quantum Mastery',
+                'text': 'Your understanding of quantum weaving allows you to manipulate the fabric of reality here. The ancient mechanisms respond to your skilled touch.'
+            },
+            'underground_contacts': {
+                'title': 'Underground Network',
+                'text': 'Your connections in the underground network prove invaluable. Hidden allies emerge from the shadows to provide assistance.'
+            },
+            'player_role': {
+                'title': 'Role Recognition',
+                'text': 'Your established role within the dwarven community grants you special privileges and responsibilities in this situation.'
+            }
+        }
+        
+        theme = var_themes.get(var, {
+            'title': f'{var.replace("_", " ").title()} Advantage',
+            'text': f'Your {var.replace("_", " ")} proves beneficial in this situation.'
+        })
+        
+        return theme['title'], theme['text']
+    
+    def _choose_location_for_variable(self, var: str) -> str:
+        """Choose an appropriate location for a variable-dependent storylet."""
+        var_locations = {
+            'corp_reputation': 'Corporate Stronghold',
+            'quantum_weaving_skill': 'Old Clan Library',
+            'underground_contacts': 'Rusted Halls',
+            'player_role': 'Clan Hall'
+        }
+        
+        # Get location or pick a random one if variable not in dictionary
+        if var in var_locations:
+            return var_locations[var]
+        else:
+            available_locations = list(self.locations - {'No Location'})
+            return random.choice(available_locations) if available_locations else 'Clan Hall'
+    
+    def smooth_story(self, dry_run: bool = False) -> Dict:
+        """
+        Main smoothing algorithm - recursively fix story problems.
+        """
+        print("🔧 Starting story smoothing algorithm...")
+        
+        # Load and analyze current state
+        self.load_storylets()
+        self.analyze_graph()
+        
+        fixes_applied = {
+            'exit_choices_added': 0,
+            'variable_storylets_created': 0,
+            'bidirectional_connections': 0,
+            'modified_storylets': []
+        }
+        
+        if dry_run:
+            print("🧪 DRY RUN MODE - No changes will be saved")
+        
+        # Fix 1: Add exit choices to isolated locations
+        for location in self.isolated_locations:
+            storylets_in_location = self.location_storylets[location]
+            
+            for storylet in storylets_in_location:
+                # Find nearby locations to connect to
+                other_locations = list(self.locations - {location, 'No Location'})[:2]
+                
+                if other_locations:
+                    new_choices = self.generate_exit_choices(storylet, other_locations)
+                    
+                    if not dry_run:
+                        self._update_storylet_choices(storylet['id'], storylet['choices'] + new_choices)
+                    
+                    fixes_applied['exit_choices_added'] += len(new_choices)
+                    fixes_applied['modified_storylets'].append(storylet['id'])
+                    
+                    print(f"✅ Added {len(new_choices)} exit choices to '{storylet['title']}'")
+        
+        # Fix 2: Create storylets that require dead-end variables
+        if self.dead_end_vars:
+            new_storylets = self.generate_variable_requirement_storylets()
+            
+            if not dry_run:
+                for new_storylet in new_storylets:
+                    self._insert_storylet(new_storylet)
+            
+            fixes_applied['variable_storylets_created'] = len(new_storylets)
+        
+        # Fix 3: Add return paths for one-way connections
+        for from_loc, to_loc in self.one_way_connections:
+            # Find a storylet in to_loc to add a return path
+            target_storylets = self.location_storylets[to_loc]
+            
+            if target_storylets:
+                storylet = target_storylets[0]  # Pick first storylet
+                return_choice = {
+                    "text": f"Return to {from_loc}",
+                    "set": {"location": from_loc},
+                    "condition": None
+                }
+                
+                if not dry_run:
+                    updated_choices = storylet['choices'] + [return_choice]
+                    self._update_storylet_choices(storylet['id'], updated_choices)
+                
+                fixes_applied['bidirectional_connections'] += 1
+                fixes_applied['modified_storylets'].append(storylet['id'])
+                
+                print(f"🔄 Added return path from {to_loc} to {from_loc}")
+        
+        # Calculate total fixes (excluding the list of modified storylets)
+        total_fixes = (fixes_applied['exit_choices_added'] + 
+                      fixes_applied['variable_storylets_created'] + 
+                      fixes_applied['bidirectional_connections'])
+        
+        print(f"🎉 Story smoothing complete! Applied {total_fixes} fixes")
+        return fixes_applied
+    
+    def _update_storylet_choices(self, storylet_id: int, new_choices: List[Dict]):
+        """Update a storylet's choices in the database."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            UPDATE storylets 
+            SET choices = ? 
+            WHERE id = ?
+        """, (json.dumps(new_choices), storylet_id))
+        
+        conn.commit()
+        conn.close()
+    
+    def _insert_storylet(self, storylet: Dict):
+        """Insert a new storylet into the database."""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO storylets (title, text_template, requires, choices, weight)
+            VALUES (?, ?, ?, ?, ?)
+        """, (
+            storylet['title'],
+            storylet['text_template'],
+            json.dumps(storylet['requires']),
+            json.dumps(storylet['choices']),
+            storylet['weight']
+        ))
+        
+        conn.commit()
+        conn.close()
+
+
+def main():
+    """Run the story smoothing algorithm."""
+    smoother = StorySmoother()
+    
+    print("🔍 Running story analysis...")
+    fixes = smoother.smooth_story(dry_run=False)
+    
+    print("\n📊 SMOOTHING RESULTS:")
+    print("=" * 50)
+    print(f"Exit choices added: {fixes['exit_choices_added']}")
+    print(f"Variable storylets created: {fixes['variable_storylets_created']}")
+    print(f"Bidirectional connections: {fixes['bidirectional_connections']}")
+    print(f"Storylets modified: {len(set(fixes['modified_storylets']))}")
+    
+    print("\n🗺️ Running updated map analysis...")
+    import subprocess
+    subprocess.run(['python', './db/storylet_map.py'])
+
+
+if __name__ == "__main__":
+    main()
