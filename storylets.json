@@ -1,0 +1,54 @@
+[
+    {
+        "title":  "Creak in the Dark",
+        "text_template":  "??? {name} hears a faint creak behind the support beam. Danger: {danger}.",
+        "requires":  {
+                         "danger":  {
+                                        "lte":  1
+                                    }
+                     },
+        "choices":  [
+                        {
+                            "label":  "Probe with pick",
+                            "set":  {
+                                        "danger":  {
+                                                       "inc":  1
+                                                   }
+                                    }
+                        },
+                        {
+                            "label":  "Wedge a shim",
+                            "set":  {
+                                        "danger":  {
+                                                       "dec":  1
+                                                   }
+                                    }
+                        }
+                    ],
+        "weight":  1.2
+    },
+    {
+        "title":  "Mushroom Cache",
+        "text_template":  "?ç? A pale cluster of cave mushrooms glows softly.",
+        "requires":  {
+                         "has_pickaxe":  true
+                     },
+        "choices":  [
+                        {
+                            "label":  "Harvest carefully",
+                            "set":  {
+                                        "food":  {
+                                                     "inc":  1
+                                                 }
+                                    }
+                        },
+                        {
+                            "label":  "Leave them be",
+                            "set":  {
+
+                                    }
+                        }
+                    ],
+        "weight":  1.0
+    }
+]

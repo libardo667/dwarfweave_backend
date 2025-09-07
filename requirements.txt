@@ -1,0 +1,41 @@
+# DwarfWeave Backend Requirements
+# AI-Powered Interactive Fiction Engine
+
+# Core Framework
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+
+# Database
+sqlalchemy==2.0.23
+alembic==1.12.1
+
+# AI/LLM Integration
+openai==1.3.5
+
+# Data Processing
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Environment Management
+python-dotenv==1.0.0
+
+# Development Tools
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+
+# Optional: For enhanced development experience
+# black==23.11.0          # Code formatting
+# flake8==6.1.0           # Linting
+# mypy==1.7.1             # Type checking
+
+# System Requirements
+# Python >= 3.11
+# OpenAI API Key (set in .env file)
+
+# Installation Instructions:
+# 1. Create virtual environment: python -m venv .venv
+# 2. Activate: .venv\Scripts\activate (Windows) or source .venv/bin/activate (Mac/Linux)
+# 3. Install: pip install -r requirements.txt
+# 4. Create .env file with: OPENAI_API_KEY=your_key_here
+# 5. Run: uvicorn main:app --reload

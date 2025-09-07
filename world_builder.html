@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DwarfWeave World Builder</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            box-sizing: border-box;
+        }
+        
+        textarea {
+            height: 120px;
+            resize: vertical;
+            font-family: inherit;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .generate-btn {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .generate-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .status.loading {
+            background: rgba(52, 152, 219, 0.2);
+            border: 2px solid #3498db;
+        }
+        
+        .status.success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 2px solid #2ecc71;
+        }
+        
+        .status.error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 2px solid #e74c3c;
+        }
+        
+        .examples {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .examples h3 {
+            margin-top: 0;
+            color: #feca57;
+        }
+        
+        .example-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+        
+        .example-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌌 DwarfWeave World Builder</h1>
+        <p class="subtitle">Create infinite interactive fiction worlds with AI</p>
+        
+        <form id="worldForm">
+            <div class="form-group">
+                <label for="description">🌍 Describe Your World</label>
+                <textarea id="description" placeholder="Paint a vivid picture of your story world... What makes it unique? What wonders and dangers await? Be as creative and detailed as you like!" required></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="theme">🎭 Theme/Genre</label>
+                    <input type="text" id="theme" placeholder="e.g., space whales, cyberpunk dwarves, mystical forests" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tone">🎵 Story Tone</label>
+                    <select id="tone">
+                        <option value="adventure">Adventure</option>
+                        <option value="wonder">Wonder & Awe</option>
+                        <option value="mystery">Mystery</option>
+                        <option value="gritty cyberpunk">Gritty Cyberpunk</option>
+                        <option value="epic fantasy">Epic Fantasy</option>
+                        <option value="horror">Horror</option>
+                        <option value="comedy">Comedy</option>
+                        <option value="romantic">Romantic</option>
+                        <option value="noir">Noir</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="playerRole">👤 Player Role</label>
+                    <input type="text" id="playerRole" placeholder="e.g., Star Navigator, Techno-weaver, Detective" value="adventurer">
+                </div>
+                
+                <div class="form-group">
+                    <label for="storyletCount">📚 Storylets to Generate</label>
+                    <select id="storyletCount">
+                        <option value="8">8 - Quick World</option>
+                        <option value="15" selected>15 - Rich World</option>
+                        <option value="25">25 - Epic World</option>
+                        <option value="40">40 - Massive World</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="keyElements">🔑 Key Elements (optional)</label>
+                <input type="text" id="keyElements" placeholder="Comma-separated key concepts, locations, or themes">
+            </div>
+            
+            <button type="submit" class="generate-btn">
+                🚀 Generate My World
+            </button>
+        </form>
+        
+        <div id="status" class="status" style="display: none;"></div>
+        
+        <div class="examples">
+            <h3>✨ Quick Start Examples</h3>
+            <button class="example-btn" onclick="loadExample('spaceWhales')">🐋 Space Whales</button>
+            <button class="example-btn" onclick="loadExample('cyberpunkDwarves')">🤖 Cyberpunk Dwarves</button>
+            <button class="example-btn" onclick="loadExample('floatingIslands')">🏝️ Floating Islands</button>
+            <button class="example-btn" onclick="loadExample('underwaterCities')">🌊 Underwater Cities</button>
+            <button class="example-btn" onclick="loadExample('timeLoops')">⏰ Time Loops</button>
+            <button class="example-btn" onclick="loadExample('musicalMagic')">🎵 Musical Magic</button>
+        </div>
+    </div>
+
+    <script>
+        const examples = {
+            spaceWhales: {
+                description: "A vast cosmos where ancient space whales swim through stellar currents, carrying entire civilizations on their backs. These magnificent creatures navigate between stars using quantum resonance, and their songs can be heard across light-years.",
+                theme: "cosmic space whales",
+                playerRole: "Star Navigator",
+                tone: "wonder",
+                keyElements: "space whales, stellar currents, quantum resonance, whale songs, cosmic civilizations"
+            },
+            cyberpunkDwarves: {
+                description: "Deep beneath neon-lit surface cities, cyberpunk dwarves operate quantum techno-forges in vast underground networks. They weave digital spells through neural interfaces while maintaining ancient clan traditions. Corporate megadwarfs rule the depths while rebel hackers fight for digital freedom.",
+                theme: "cyberpunk quantum technoweaving dwarves",
+                playerRole: "techno-weaver",
+                tone: "gritty cyberpunk",
+                keyElements: "quantum forges, neural interfaces, digital spells, clan traditions, corporate megadwarfs"
+            },
+            floatingIslands: {
+                description: "Massive islands float through endless skies, held aloft by crystalline cores that hum with ancient magic. Sky pirates sail between them on wind-powered ships, while mysterious beings control the weather from hidden cloud fortresses.",
+                theme: "floating sky islands",
+                playerRole: "sky captain",
+                tone: "adventure",
+                keyElements: "floating islands, crystalline cores, sky pirates, wind ships, cloud fortresses, weather magic"
+            },
+            underwaterCities: {
+                description: "Beneath the ocean's surface, bioluminescent cities pulse with life. Mer-engineers craft living buildings from coral and kelp, while deep-sea explorers venture into abyssal trenches seeking lost technologies from the sunken surface world.",
+                theme: "underwater bioluminescent cities",
+                playerRole: "deep-sea explorer",
+                tone: "mystery",
+                keyElements: "bioluminescent cities, mer-engineers, living coral buildings, abyssal trenches, sunken technologies"
+            },
+            timeLoops: {
+                description: "Reality fractures into recursive time loops where the same day repeats with subtle variations. Temporal mechanics work to repair the breaks while loop-walkers exploit the chaos to rewrite history itself.",
+                theme: "temporal mechanics and time loops",
+                playerRole: "temporal mechanic",
+                tone: "mystery",
+                keyElements: "time loops, reality fractures, temporal mechanics, loop-walkers, recursive days, history rewriting"
+            },
+            musicalMagic: {
+                description: "In a world where music shapes reality, symphony-mages conduct orchestras of elemental forces. Melody-crafters weave spells through instrument creation while rhythm-dancers manipulate time itself through perfect beats.",
+                theme: "musical magic and symphony-mages",
+                playerRole: "melody-crafter",
+                tone: "wonder",
+                keyElements: "musical magic, symphony-mages, elemental orchestras, melody-crafting, rhythm-dancing, time manipulation"
+            }
+        };
+
+        function loadExample(exampleKey) {
+            const example = examples[exampleKey];
+            if (example) {
+                document.getElementById('description').value = example.description;
+                document.getElementById('theme').value = example.theme;
+                document.getElementById('playerRole').value = example.playerRole;
+                document.getElementById('tone').value = example.tone;
+                document.getElementById('keyElements').value = example.keyElements;
+                
+                // Animate the form to show it's been updated
+                document.getElementById('worldForm').style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    document.getElementById('worldForm').style.transform = 'scale(1)';
+                }, 200);
+            }
+        }
+
+        document.getElementById('worldForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = document.querySelector('.generate-btn');
+            const statusDiv = document.getElementById('status');
+            
+            // Get form data
+            const description = document.getElementById('description').value;
+            const theme = document.getElementById('theme').value;
+            const playerRole = document.getElementById('playerRole').value;
+            const tone = document.getElementById('tone').value;
+            const storyletCount = parseInt(document.getElementById('storyletCount').value);
+            const keyElementsStr = document.getElementById('keyElements').value;
+            const keyElements = keyElementsStr ? keyElementsStr.split(',').map(s => s.trim()) : [];
+            
+            // Update UI for loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '🌟 Generating Your World...';
+            statusDiv.className = 'status loading';
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '✨ The AI is crafting your unique world...<br>This may take 30-60 seconds for larger worlds.';
+            
+            try {
+                const response = await fetch('/author/generate-world', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        description,
+                        theme,
+                        player_role: playerRole,
+                        key_elements: keyElements,
+                        tone,
+                        storylet_count: storyletCount
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    statusDiv.className = 'status success';
+                    statusDiv.innerHTML = `
+                        🎉 <strong>World Generated Successfully!</strong><br>
+                        Created ${result.storylets_created} storylets for your "${result.theme}" world!<br>
+                        <small>You can now play your story in Twine or the game interface.</small>
+                    `;
+                } else {
+                    throw new Error(result.detail || 'Generation failed');
+                }
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `
+                    ❌ <strong>Generation Failed</strong><br>
+                    ${error.message}<br>
+                    <small>Make sure the backend server is running.</small>
+                `;
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '🚀 Generate My World';
+            }
+        });
+    </script>
+</body>
+</html>
