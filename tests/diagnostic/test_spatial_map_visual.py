@@ -377,8 +377,10 @@ def main():
     
     html_content = generate_visual_map()
     
-    # Save to file
-    output_file = project_root / "spatial_map.html"
+    # Save to file in reports/
+    reports_dir = project_root / "reports"
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    output_file = reports_dir / "spatial_map.html"
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(html_content)
     
