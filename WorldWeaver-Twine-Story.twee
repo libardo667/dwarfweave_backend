@@ -51,7 +51,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    margin-top: 30px;
+    margin: 30px auto;
+    align-items: center;
+    max-width: 400px;
 }
 
 .menu-btn {
@@ -130,7 +132,7 @@ body {
             ✨ Weave a New Reality
         </span>
         <span class="menu-btn secondary" onclick="document.querySelector('a[data-passage=Game]').click()">
-            � Enter Existing Reality
+            🌌 Enter Existing Reality
         </span>
     </div>
     
@@ -280,7 +282,7 @@ textarea {
 </style>
 
 <div class="world-builder">
-    <h2>� Weave Your Reality</h2>
+    <h2>🌌 Weave Your Reality</h2>
     
     <div class="form-group">
         <label for="description">Describe Your Reality:</label>
@@ -354,10 +356,10 @@ async function generateWorld() {
     }
     
     btn.disabled = true;
-    btn.innerHTML = '🌟 Generating...';
+    btn.innerHTML = '<span class="spinner">🌀</span> Weaving Reality...';
     status.className = 'status loading';
     status.style.display = 'block';
-    status.innerHTML = '✨ Creating your world...';
+    status.innerHTML = '<span class="spinner">🌀</span> Consulting the cosmic tapestry...<br><small>This may take a moment</small>';
     
     try {
         const response = await fetch('http://localhost:8000/author/generate-world', {
@@ -389,7 +391,7 @@ async function generateWorld() {
                     border-radius: 10px;
                     cursor: pointer;
                     margin-top: 10px;
-                ">� Enter Your Reality!</button>
+                ">🌟 Enter Your Reality!</button>
             `;
         } else {
             throw new Error(result.detail || 'Generation failed');
@@ -400,7 +402,7 @@ async function generateWorld() {
         status.innerHTML = `❌ Error: ${error.message}<br><small>Make sure your backend server is running!</small>`;
     } finally {
         btn.disabled = false;
-        btn.innerHTML = '🚀 Generate My World';
+        btn.innerHTML = '✨ Weave This Reality';
     }
 }
 </script>
@@ -487,10 +489,10 @@ body {
 </style>
 
 <div class="game-container">
-    <h1 class="game-title">� Your Reality</h1>
+    <h1 class="game-title">🌌 Your Reality</h1>
     
     <div id="game-content">
-        <p>Weaving your reality threads...</p>
+        <p style="text-align: center;"><span class="spinner">�</span> Weaving your reality threads...</p>
     </div>
     
     <div class="nav-links">
@@ -556,6 +558,14 @@ body {
         const choice = window.currentChoices[choiceIndex];
         const newVars = { ...window.currentVars, ...choice.set };
         
+        // Show loading state
+        document.getElementById('game-content').innerHTML = `
+            <div style="text-align: center; padding: 40px 0;">
+                <p><span class="spinner">🌀</span> Reality shifting...</p>
+                <small style="opacity: 0.8;">Following the chosen thread</small>
+            </div>
+        `;
+        
         try {
             const response = await fetch('http://localhost:8000/api/next', {
                 method: 'POST',
@@ -612,3 +622,500 @@ window.goToPassage = function(passageName) {
 window.restartStory = function() {
     Engine.restart();
 };
+
+// ========== WorldWeaver Enhanced Features ==========
+
+// Progress Tracking System
+window.WorldWeaver = {
+    // Track player's journey through reality threads
+    progressMap: {
+        visited_storylets: [],
+        decision_count: 0,
+        session_start: Date.now(),
+        current_session: null
+    },
+    
+    // Reality Weaving Analytics
+    analytics: {
+        trackChoice: function(choiceLabel, storyletTitle) {
+            WorldWeaver.progressMap.decision_count++;
+            console.log(`🌟 Choice made: "${choiceLabel}" in "${storyletTitle}"`);
+            
+            // Store in session storage for persistence
+            if (typeof Storage !== "undefined") {
+                let journeyLog = JSON.parse(localStorage.getItem('worldweaver_journey') || '[]');
+                journeyLog.push({
+                    timestamp: Date.now(),
+                    storylet: storyletTitle,
+                    choice: choiceLabel,
+                    session: WorldWeaver.progressMap.current_session
+                });
+                
+                // Keep only last 50 entries to avoid storage bloat
+                if (journeyLog.length > 50) {
+                    journeyLog = journeyLog.slice(-50);
+                }
+                
+                localStorage.setItem('worldweaver_journey', JSON.stringify(journeyLog));
+            }
+        },
+        
+        getJourneyStats: function() {
+            return {
+                decisions_made: WorldWeaver.progressMap.decision_count,
+                session_duration: Math.floor((Date.now() - WorldWeaver.progressMap.session_start) / 1000),
+                storylets_visited: WorldWeaver.progressMap.visited_storylets.length
+            };
+        }
+    },
+    
+    // Dynamic UI Enhancements
+    ui: {
+        // Add subtle particles effect to enhance cosmic feel
+        addCosmicParticles: function() {
+            if (document.getElementById('cosmic-particles')) return; // Already exists
+            
+            const particles = document.createElement('div');
+            particles.id = 'cosmic-particles';
+            particles.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: -1;
+                background: radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+                           radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.8), transparent),
+                           radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+                           radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.6), transparent);
+                background-repeat: repeat;
+                background-size: 200px 100px;
+                animation: twinkle 3s linear infinite;
+            `;
+            document.body.appendChild(particles);
+            
+            // Add twinkle animation if not already defined
+            if (!document.getElementById('cosmic-style')) {
+                const style = document.createElement('style');
+                style.id = 'cosmic-style';
+                style.textContent = `
+                    @keyframes twinkle {
+                        0% { opacity: 0.3; }
+                        50% { opacity: 0.8; }
+                        100% { opacity: 0.3; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        },
+        
+        // Show progress indicator
+        showProgressIndicator: function() {
+            const stats = WorldWeaver.analytics.getJourneyStats();
+            const indicator = document.createElement('div');
+            indicator.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: rgba(0,0,0,0.7);
+                color: white;
+                padding: 8px 12px;
+                border-radius: 20px;
+                font-size: 0.8em;
+                z-index: 1000;
+                backdrop-filter: blur(5px);
+                cursor: pointer;
+            `;
+            indicator.innerHTML = `🗺️ ${stats.decisions_made} threads • ⏱️ ${Math.floor(stats.session_duration/60)}m`;
+            
+            // Remove existing indicator
+            const existing = document.getElementById('progress-indicator');
+            if (existing) existing.remove();
+            
+            indicator.id = 'progress-indicator';
+            indicator.onclick = () => WorldWeaver.map.showRealityMap();
+            document.body.appendChild(indicator);
+            
+            // Auto-hide after 3 seconds unless hovered
+            let hideTimeout = setTimeout(() => {
+                if (indicator.parentNode && !indicator.matches(':hover')) {
+                    indicator.style.transition = 'opacity 0.5s';
+                    indicator.style.opacity = '0.6';
+                }
+            }, 3000);
+            
+            indicator.onmouseenter = () => {
+                clearTimeout(hideTimeout);
+                indicator.style.opacity = '1';
+            };
+        },
+        
+        // Create floating map toggle button
+        createMapToggle: function() {
+            if (document.getElementById('map-toggle')) return;
+            
+            const toggle = document.createElement('div');
+            toggle.id = 'map-toggle';
+            toggle.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                width: 60px;
+                height: 60px;
+                background: linear-gradient(45deg, #667eea, #764ba2);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                z-index: 1000;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                transition: all 0.3s ease;
+                font-size: 1.5em;
+            `;
+            toggle.innerHTML = '🗺️';
+            toggle.onclick = () => WorldWeaver.map.toggleRealityMap();
+            
+            toggle.onmouseenter = () => {
+                toggle.style.transform = 'scale(1.1)';
+                toggle.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)';
+            };
+            
+            toggle.onmouseleave = () => {
+                toggle.style.transform = 'scale(1)';
+                toggle.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)';
+            };
+            
+            document.body.appendChild(toggle);
+        }
+    },
+    
+    // Reality Map System
+    map: {
+        isVisible: false,
+        currentMap: null,
+        
+        // Generate visual reality map
+        generateRealityMap: function() {
+            const journey = JSON.parse(localStorage.getItem('worldweaver_journey') || '[]');
+            const stats = WorldWeaver.analytics.getJourneyStats();
+            
+            if (journey.length === 0) {
+                return `
+                    <div style="text-align: center; padding: 40px; color: rgba(255,255,255,0.8);">
+                        <div style="font-size: 3em; margin-bottom: 20px;">🌌</div>
+                        <h3>Your Reality Threads Await</h3>
+                        <p>Begin your journey to see the tapestry unfold...</p>
+                    </div>
+                `;
+            }
+            
+            let mapHTML = `
+                <div style="padding: 20px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h2 style="margin: 0; color: #feca57;">🗺️ Reality Tapestry</h2>
+                        <p style="margin: 5px 0; opacity: 0.8;">${stats.decisions_made} threads woven • ${stats.storylets_visited} realms explored</p>
+                    </div>
+                    
+                    <div style="position: relative; min-height: 400px;">
+            `;
+            
+            // Create visual thread connections
+            journey.forEach((entry, index) => {
+                const x = 50 + (index % 4) * 150;
+                const y = 80 + Math.floor(index / 4) * 120;
+                const isRecent = index >= journey.length - 3;
+                
+                // Thread node
+                mapHTML += `
+                    <div style="
+                        position: absolute;
+                        left: ${x}px;
+                        top: ${y}px;
+                        width: 80px;
+                        height: 80px;
+                        background: ${isRecent ? 'linear-gradient(45deg, #feca57, #ff6b6b)' : 'linear-gradient(45deg, #667eea, #764ba2)'};
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 1.2em;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                        border: ${isRecent ? '3px solid #fff' : '2px solid rgba(255,255,255,0.5)'};
+                    " title="${entry.storylet}: ${entry.choice}" onclick="WorldWeaver.map.showThreadDetail(${index})">
+                        ${WorldWeaver.map.getThreadIcon(entry.choice)}
+                    </div>
+                `;
+                
+                // Connection line to next thread
+                if (index < journey.length - 1) {
+                    const nextX = 50 + ((index + 1) % 4) * 150;
+                    const nextY = 80 + Math.floor((index + 1) / 4) * 120;
+                    
+                    mapHTML += `
+                        <svg style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;">
+                            <line x1="${x + 40}" y1="${y + 40}" x2="${nextX + 40}" y2="${nextY + 40}" 
+                                  stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-dasharray="5,5">
+                                <animate attributeName="stroke-dashoffset" values="0;-10" dur="2s" repeatCount="indefinite"/>
+                            </line>
+                        </svg>
+                    `;
+                }
+            });
+            
+            mapHTML += `
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 10px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div><strong>🌟 Recent Threads</strong><br><small>Last 3 choices</small></div>
+                            <div><strong>⚡ Path Density</strong><br><small>${Math.round(stats.decisions_made / Math.max(stats.session_duration / 60, 1))} choices/min</small></div>
+                            <div><strong>🌌 Reality Depth</strong><br><small>${stats.storylets_visited} unique locations</small></div>
+                        </div>
+                        <button onclick="WorldWeaver.map.exportJourney()" style="
+                            background: linear-gradient(45deg, #2ecc71, #27ae60);
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 20px;
+                            cursor: pointer;
+                            margin: 5px;
+                        ">📝 Export Journey</button>
+                        <button onclick="WorldWeaver.map.clearMap()" style="
+                            background: linear-gradient(45deg, #e74c3c, #c0392b);
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 20px;
+                            cursor: pointer;
+                            margin: 5px;
+                        ">🗑️ Clear History</button>
+                    </div>
+                </div>
+            `;
+            
+            return mapHTML;
+        },
+        
+        // Get appropriate icon for thread choice
+        getThreadIcon: function(choice) {
+            const choice_lower = choice.toLowerCase();
+            if (choice_lower.includes('explore') || choice_lower.includes('venture')) return '🔍';
+            if (choice_lower.includes('magic') || choice_lower.includes('spell')) return '✨';
+            if (choice_lower.includes('fight') || choice_lower.includes('attack')) return '⚔️';
+            if (choice_lower.includes('help') || choice_lower.includes('assist')) return '🤝';
+            if (choice_lower.includes('run') || choice_lower.includes('flee')) return '💨';
+            if (choice_lower.includes('talk') || choice_lower.includes('speak')) return '💬';
+            if (choice_lower.includes('learn') || choice_lower.includes('study')) return '📚';
+            if (choice_lower.includes('craft') || choice_lower.includes('create')) return '🔨';
+            return '🌟'; // Default icon
+        },
+        
+        // Show/hide reality map
+        toggleRealityMap: function() {
+            if (WorldWeaver.map.isVisible) {
+                WorldWeaver.map.hideRealityMap();
+            } else {
+                WorldWeaver.map.showRealityMap();
+            }
+        },
+        
+        showRealityMap: function() {
+            if (WorldWeaver.map.currentMap) {
+                WorldWeaver.map.currentMap.remove();
+            }
+            
+            const mapOverlay = document.createElement('div');
+            mapOverlay.id = 'reality-map-overlay';
+            mapOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.9);
+                z-index: 10000;
+                backdrop-filter: blur(5px);
+                overflow: auto;
+            `;
+            
+            const mapContainer = document.createElement('div');
+            mapContainer.style.cssText = `
+                max-width: 800px;
+                margin: 20px auto;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 20px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                position: relative;
+                color: white;
+            `;
+            
+            // Close button
+            const closeBtn = document.createElement('div');
+            closeBtn.style.cssText = `
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                width: 40px;
+                height: 40px;
+                background: rgba(255,255,255,0.2);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+                font-size: 1.5em;
+                z-index: 10001;
+            `;
+            closeBtn.innerHTML = '✕';
+            closeBtn.onclick = () => WorldWeaver.map.hideRealityMap();
+            
+            mapContainer.innerHTML = WorldWeaver.map.generateRealityMap();
+            mapContainer.appendChild(closeBtn);
+            mapOverlay.appendChild(mapContainer);
+            
+            // Close on overlay click
+            mapOverlay.onclick = (e) => {
+                if (e.target === mapOverlay) {
+                    WorldWeaver.map.hideRealityMap();
+                }
+            };
+            
+            document.body.appendChild(mapOverlay);
+            WorldWeaver.map.currentMap = mapOverlay;
+            WorldWeaver.map.isVisible = true;
+        },
+        
+        hideRealityMap: function() {
+            if (WorldWeaver.map.currentMap) {
+                WorldWeaver.map.currentMap.remove();
+                WorldWeaver.map.currentMap = null;
+            }
+            WorldWeaver.map.isVisible = false;
+        },
+        
+        // Show detail for specific thread
+        showThreadDetail: function(index) {
+            const journey = JSON.parse(localStorage.getItem('worldweaver_journey') || '[]');
+            const entry = journey[index];
+            if (!entry) return;
+            
+            alert(`🌟 Reality Thread #${index + 1}\n\n` +
+                  `📍 Location: ${entry.storylet}\n` +
+                  `⚡ Choice: ${entry.choice}\n` +
+                  `⏰ Time: ${new Date(entry.timestamp).toLocaleString()}\n` +
+                  `🎭 Session: ${entry.session}`);
+        },
+        
+        // Export journey as text
+        exportJourney: function() {
+            const journey = JSON.parse(localStorage.getItem('worldweaver_journey') || '[]');
+            const stats = WorldWeaver.analytics.getJourneyStats();
+            
+            let exportText = `🌌 WorldWeaver Journey Export\n`;
+            exportText += `Generated: ${new Date().toLocaleString()}\n`;
+            exportText += `Total Decisions: ${stats.decisions_made}\n`;
+            exportText += `Session Duration: ${Math.floor(stats.session_duration/60)} minutes\n`;
+            exportText += `Storylets Visited: ${stats.storylets_visited}\n\n`;
+            exportText += `=== REALITY THREAD SEQUENCE ===\n\n`;
+            
+            journey.forEach((entry, index) => {
+                exportText += `${index + 1}. ${entry.storylet}\n`;
+                exportText += `   Choice: ${entry.choice}\n`;
+                exportText += `   Time: ${new Date(entry.timestamp).toLocaleString()}\n\n`;
+            });
+            
+            // Create download
+            const blob = new Blob([exportText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `worldweaver_journey_${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        },
+        
+        // Clear journey history
+        clearMap: function() {
+            if (confirm('🗑️ Clear your entire reality thread history? This cannot be undone.')) {
+                localStorage.removeItem('worldweaver_journey');
+                WorldWeaver.debug.resetProgress();
+                WorldWeaver.map.hideRealityMap();
+                alert('✅ Reality thread history cleared!');
+            }
+        }
+    },
+    
+    // Debug and Development Tools
+    debug: {
+        // Show current game state (for development)
+        showState: function() {
+            console.log('🌌 WorldWeaver Debug State:', {
+                progress: WorldWeaver.progressMap,
+                stats: WorldWeaver.analytics.getJourneyStats(),
+                sugarcube_vars: typeof State !== 'undefined' ? State.variables : 'N/A'
+            });
+        },
+        
+        // Quick reset for testing
+        resetProgress: function() {
+            WorldWeaver.progressMap = {
+                visited_storylets: [],
+                decision_count: 0,
+                session_start: Date.now(),
+                current_session: 'session-' + Math.random().toString(36).substr(2, 9)
+            };
+            if (typeof Storage !== "undefined") {
+                localStorage.removeItem('worldweaver_journey');
+            }
+            console.log('🔄 Progress reset');
+        }
+    }
+};
+
+// Initialize WorldWeaver when story starts
+$(document).on(':storyready', function() {
+    WorldWeaver.progressMap.current_session = 'session-' + Math.random().toString(36).substr(2, 9);
+    WorldWeaver.ui.addCosmicParticles();
+    WorldWeaver.ui.createMapToggle();
+    console.log('🌌 WorldWeaver initialized with reality mapping');
+});
+
+// Track passage changes
+$(document).on(':passagestart', function(ev) {
+    const passageName = ev.passage.title;
+    if (!WorldWeaver.progressMap.visited_storylets.includes(passageName)) {
+        WorldWeaver.progressMap.visited_storylets.push(passageName);
+    }
+    
+    // Show progress for Game passages
+    if (passageName === 'Game') {
+        setTimeout(() => WorldWeaver.ui.showProgressIndicator(), 1000);
+    }
+});
+
+// Enhanced choice tracking for makeChoice function
+const originalMakeChoice = window.makeChoice;
+if (originalMakeChoice) {
+    window.makeChoice = function(choiceIndex) {
+        const choice = window.currentChoices && window.currentChoices[choiceIndex];
+        if (choice) {
+            WorldWeaver.analytics.trackChoice(choice.label, 'Current Storylet');
+        }
+        return originalMakeChoice.call(this, choiceIndex);
+    };
+}
+
+:: Stylesheet [stylesheet]
+.spinner {
+    display: inline-block;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

@@ -126,7 +126,7 @@ def llm_suggest_storylets(n: int, themes: List[str], bible: Dict[str, Any]) -> L
     }
 
     response = client.chat.completions.create(
-        model=os.getenv("MODEL", "gpt-4o-mini"),
+        model=os.getenv("MODEL", "gpt-5-2025-08-07"),
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": system_prompt},
@@ -339,7 +339,7 @@ Return EXACTLY {count} storylets in this JSON format:
 Focus on creating an interconnected web of storylets where choices in one storylet unlock or influence others. Make the world feel alive and responsive to player choices."""
 
         response = client.chat.completions.create(
-            model=os.getenv("MODEL", "gpt-4o-mini"),
+            model=os.getenv("MODEL", "gpt-5-2025-08-07"),
             messages=[
                 {"role": "system", "content": "You are an expert interactive fiction world builder. Create interconnected storylets that form a cohesive narrative ecosystem."},
                 {"role": "user", "content": world_prompt}
@@ -358,7 +358,26 @@ Focus on creating an interconnected web of storylets where choices in one storyl
             raise ValueError("No JSON array found in response")
         
         json_text = response_text[json_start:json_end]
-        storylets = json.loads(json_text)
+        
+        # Debug: Print the JSON text to see what's causing the parsing error
+        print(f"🔍 DEBUG: Attempting to parse JSON (length: {len(json_text)})")
+        print(f"🔍 DEBUG: First 200 chars: {json_text[:200]}")
+        
+        try:
+            storylets = json.loads(json_text)
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON Decode Error: {e}")
+            print(f"🔍 Error position: {e.pos}")
+            print(f"🔍 Context around error: {json_text[max(0, e.pos-50):e.pos+50]}")
+            
+            # Try to clean common JSON issues
+            cleaned_json = json_text.replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+            # Remove any control characters
+            import re
+            cleaned_json = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', cleaned_json)
+            
+            print(f"🔧 Attempting to parse cleaned JSON...")
+            storylets = json.loads(cleaned_json)
         
         # Validate and normalize the storylets
         normalized_storylets = []
@@ -450,7 +469,7 @@ Return EXACTLY this JSON format:
 Make this feel like a natural, immersive beginning to THIS specific world, not a generic adventure start."""
 
         response = client.chat.completions.create(
-            model=os.getenv("MODEL", "gpt-4o-mini"),
+            model=os.getenv("MODEL", "gpt-5-2025-08-07"),
             messages=[
                 {"role": "system", "content": "You are an expert at creating immersive, world-specific story openings that perfectly match the generated content."},
                 {"role": "user", "content": starting_prompt}

@@ -36,7 +36,7 @@ try:
         client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
         
         simple_response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-5-2025-08-07",
             response_format={"type": "json_object"},
             messages=[
                 {"role": "system", "content": "Return a JSON object with a 'test' field."},

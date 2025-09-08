@@ -31,7 +31,7 @@ try:
             
             # Test a simple API call
             response = client.chat.completions.create(
-                model="gpt-4o-mini",
+                model="gpt-5-2025-08-07",
                 messages=[{"role": "user", "content": "Say hello"}],
                 max_completion_tokens=10
             )
