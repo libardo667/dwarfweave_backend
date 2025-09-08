@@ -528,8 +528,28 @@ class StorySmoother:
             storylet['weight']
         ))
         
+        # Get the ID of the newly inserted storylet
+        new_storylet_id = cursor.lastrowid
+        
         conn.commit()
         conn.close()
+        
+        # Auto-assign spatial coordinates if the storylet has a location
+        if new_storylet_id is not None:
+            try:
+                from sqlalchemy.orm import sessionmaker
+                from ..database import engine
+                Session = sessionmaker(bind=engine)
+                db_session = Session()
+                
+                from .spatial_navigator import SpatialNavigator
+                updates = SpatialNavigator.auto_assign_coordinates(db_session, [new_storylet_id])
+                if updates > 0:
+                    print(f"📍 Auto-assigned coordinates to new storylet: {storylet['title']}")
+                
+                db_session.close()
+            except Exception as e:
+                print(f"⚠️ Warning: Could not auto-assign coordinates to storylet '{storylet['title']}': {e}")
 
 
 def main():

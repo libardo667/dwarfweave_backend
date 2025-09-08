@@ -53,6 +53,102 @@ class SpatialNavigator:
         self.position_storylets: Dict[Position, int] = {}
         self._load_positions()
     
+    @staticmethod
+    def auto_assign_coordinates(db_session: Session, storylet_ids: Optional[List[int]] = None) -> int:
+        """
+        Automatically assign coordinates to storylets that have locations but no coordinates.
+        
+        Args:
+            db_session: Database session
+            storylet_ids: Optional list of specific storylet IDs to process. If None, processes all storylets.
+            
+        Returns:
+            Number of storylets updated with coordinates
+        """
+        from .location_mapper import LocationMapper
+        
+        # Build query based on whether specific IDs are provided
+        if storylet_ids:
+            # Process specific storylets
+            id_placeholders = ','.join([':id' + str(i) for i in range(len(storylet_ids))])
+            query = f"""
+                SELECT id, title, requires 
+                FROM storylets 
+                WHERE id IN ({id_placeholders})
+                AND (spatial_x IS NULL OR spatial_y IS NULL) 
+                AND requires IS NOT NULL 
+                AND requires != '{{}}'
+            """
+            # Create parameter dict
+            params = {f'id{i}': storylet_id for i, storylet_id in enumerate(storylet_ids)}
+            result = db_session.execute(text(query), params)
+        else:
+            # Process all storylets without coordinates
+            result = db_session.execute(text("""
+                SELECT id, title, requires 
+                FROM storylets 
+                WHERE (spatial_x IS NULL OR spatial_y IS NULL) 
+                AND requires IS NOT NULL 
+                AND requires != '{}'
+            """))
+        
+        storylets_to_fix = []
+        for row in result.fetchall():
+            id_val, title, requires_json = row
+            try:
+                requires = json.loads(requires_json) if requires_json else {}
+            except:
+                requires = {}
+            
+            location = requires.get('location')
+            if location:
+                storylets_to_fix.append({
+                    'id': id_val,
+                    'title': title,
+                    'requires': requires,
+                    'choices': [],  # We don't need choices for coordinate assignment
+                    'weight': 1.0
+                })
+        
+        if not storylets_to_fix:
+            return 0
+        
+        # Use LocationMapper to assign coordinates
+        mapper = LocationMapper()
+        storylets_with_coords = mapper.assign_coordinates_to_storylets(storylets_to_fix)
+        
+        # Update database with coordinates
+        updates_made = 0
+        for storylet_data in storylets_with_coords:
+            if 'spatial_x' in storylet_data and 'spatial_y' in storylet_data:
+                x, y = storylet_data['spatial_x'], storylet_data['spatial_y']
+                storylet_id = storylet_data['id']
+                
+                db_session.execute(text("""
+                    UPDATE storylets 
+                    SET spatial_x = :x, spatial_y = :y 
+                    WHERE id = :id
+                """), {"x": x, "y": y, "id": storylet_id})
+                
+                updates_made += 1
+        
+        if updates_made > 0:
+            db_session.commit()
+            print(f"📍 Auto-assigned coordinates to {updates_made} storylets")
+        
+        return updates_made
+    
+    @staticmethod
+    def ensure_all_coordinates(db_session: Session) -> int:
+        """
+        Ensure all storylets with locations have spatial coordinates.
+        This is a convenience method for bulk operations.
+        
+        Returns:
+            Number of storylets updated with coordinates
+        """
+        return SpatialNavigator.auto_assign_coordinates(db_session, None)
+    
     def _load_positions(self):
         """Load storylet positions from database."""
         try:
@@ -95,7 +191,7 @@ class SpatialNavigator:
         self.db.commit()
     
     def assign_spatial_positions(self, storylets: List[Dict[str, Any]], start_pos: Optional[Position] = None) -> Dict[int, Position]:
-        """Assign spatial positions to storylets based on their connections."""
+        """Assign spatial positions to storylets based on their connections and locations."""
         if start_pos is None:
             start_pos = Position(0, 0)
         
@@ -105,15 +201,58 @@ class SpatialNavigator:
         self.storylet_positions.clear()
         self.position_storylets.clear()
         
-        # Build title -> id map
+        # Use LocationMapper to assign coordinates to storylets based on location names
+        from .location_mapper import LocationMapper
+        mapper = LocationMapper()
+        storylets_with_coords = mapper.assign_coordinates_to_storylets(storylets)
+        
+        # Build title -> id map from database
         storylet_map: Dict[str, int] = {}
         cursor = self.db.execute(text("SELECT id, title FROM storylets"))
         for row in cursor.fetchall():
             storylet_map[row[1]] = row[0]
 
-        if not storylets:
+        if not storylets_with_coords:
             return {}
 
+        # Place storylets at their assigned coordinates
+        positions_assigned = {}
+        for storylet_data in storylets_with_coords:
+            title = storylet_data.get('title', '')
+            storylet_id = storylet_map.get(title)
+            
+            if not storylet_id:
+                continue
+            
+            # Use assigned coordinates if available
+            if 'spatial_x' in storylet_data and 'spatial_y' in storylet_data:
+                x, y = storylet_data['spatial_x'], storylet_data['spatial_y']
+                position = Position(x, y)
+                
+                # Ensure position is free (in case of conflicts)
+                final_position = self._find_free_position(position)
+                self._place_storylet(storylet_id, final_position)
+                positions_assigned[storylet_id] = final_position
+                
+                print(f"📍 Placed '{title}' at ({final_position.x}, {final_position.y})")
+        
+        # If we have storylets without coordinates, place them using the old algorithm
+        unplaced_storylets = []
+        for storylet_data in storylets_with_coords:
+            title = storylet_data.get('title', '')
+            storylet_id = storylet_map.get(title)
+            
+            if storylet_id and storylet_id not in positions_assigned:
+                unplaced_storylets.append(storylet_data)
+        
+        if unplaced_storylets:
+            print(f"📍 Using connection-based placement for {len(unplaced_storylets)} unplaced storylets")
+            self._place_by_connections(unplaced_storylets, storylet_map, start_pos)
+
+        return self.storylet_positions
+    
+    def _place_by_connections(self, storylets: List[Dict[str, Any]], storylet_map: Dict[str, int], start_pos: Position):
+        """Place storylets using the connection-based algorithm for those without coordinates."""
         # Index storylets by required location
         location_index: Dict[str, List[int]] = {}
         id_list: List[int] = []
@@ -150,7 +289,7 @@ class SpatialNavigator:
         if starting_id is None and id_list:
             starting_id = id_list[0]
         if starting_id is None:
-            return {}
+            return
 
         # BFS/spiral placement across the graph
         positioned: set[int] = set()
@@ -176,8 +315,6 @@ class SpatialNavigator:
                 start_pos = self._find_free_position(start_pos)
                 self._place_storylet(sid, start_pos)
                 positioned.add(sid)
-
-        return self.storylet_positions
     
     def _find_free_position(self, preferred_pos: Position) -> Position:
         """Find the nearest free position to the preferred position."""

@@ -70,6 +70,17 @@ def author_commit(payload: SuggestResp, db: Session = Depends(get_db)):
         count += 1
     db.commit()
     
+    # Auto-assign spatial coordinates to newly committed storylets
+    if count > 0:
+        from ..services.spatial_navigator import SpatialNavigator
+        new_storylet_ids = []
+        for storylet in db.query(Storylet).filter(Storylet.title.in_([s.title for s in payload.storylets])):
+            new_storylet_ids.append(storylet.id)
+        
+        updates = SpatialNavigator.auto_assign_coordinates(db, new_storylet_ids)
+        if updates > 0:
+            print(f"📍 Auto-assigned coordinates to {updates} committed storylets")
+    
     # Auto-improve storylets after adding new ones
     from ..services.auto_improvement import auto_improve_storylets, should_run_auto_improvement, get_improvement_summary
     
@@ -96,6 +107,13 @@ def populate_storylets(target_count: int = 20, db: Session = Depends(get_db)):
     try:
         added = auto_populate_storylets(db, target_count)
         current_count = db.query(Storylet).count()
+        
+        # Auto-assign spatial coordinates to any storylets that need them
+        if added > 0:
+            from ..services.spatial_navigator import SpatialNavigator
+            updates = SpatialNavigator.auto_assign_coordinates(db)
+            if updates > 0:
+                print(f"📍 Auto-assigned coordinates to {updates} populated storylets")
         
         # Auto-improve storylets after population
         from ..services.auto_improvement import auto_improve_storylets, should_run_auto_improvement, get_improvement_summary
@@ -205,6 +223,17 @@ def generate_intelligent_storylets(
             })
         
         db.commit()
+        
+        # Auto-assign spatial coordinates to newly created storylets
+        if created_storylets:
+            from ..services.spatial_navigator import SpatialNavigator
+            new_storylet_ids = []
+            for storylet in db.query(Storylet).filter(Storylet.title.in_([s["title"] for s in created_storylets])):
+                new_storylet_ids.append(storylet.id)
+            
+            updates = SpatialNavigator.auto_assign_coordinates(db, new_storylet_ids)
+            if updates > 0:
+                print(f"📍 Auto-assigned coordinates to {updates} intelligent storylets")
         
         # Auto-improve storylets after intelligent generation
         from ..services.auto_improvement import auto_improve_storylets, should_run_auto_improvement, get_improvement_summary
@@ -318,6 +347,17 @@ def generate_targeted_storylets(db: Session = Depends(get_db)):
             })
         
         db.commit()
+        
+        # Auto-assign spatial coordinates to newly created storylets
+        if created_storylets:
+            from ..services.spatial_navigator import SpatialNavigator
+            new_storylet_ids = []
+            for storylet in db.query(Storylet).filter(Storylet.title.in_([s["title"] for s in created_storylets])):
+                new_storylet_ids.append(storylet.id)
+            
+            updates = SpatialNavigator.auto_assign_coordinates(db, new_storylet_ids)
+            if updates > 0:
+                print(f"📍 Auto-assigned coordinates to {updates} targeted storylets")
         
         # Auto-improve storylets after targeted generation
         from ..services.auto_improvement import auto_improve_storylets, should_run_auto_improvement, get_improvement_summary
@@ -442,14 +482,32 @@ def generate_world_from_description(
         
         db.commit()
         
+        # Get the IDs of newly created storylets for spatial assignment
+        new_storylet_ids = []
+        for storylet in db.query(Storylet).filter(Storylet.title.in_([s["title"] for s in created_storylets])):
+            new_storylet_ids.append(storylet.id)
+        
         # Assign spatial positions to the generated storylets
         from ..services.spatial_navigator import SpatialNavigator
         try:
-            spatial_nav = SpatialNavigator(db.connection())
+            spatial_nav = SpatialNavigator(db)
             positions = spatial_nav.assign_spatial_positions(created_storylets)
             print(f"📍 Assigned spatial positions to {len(positions)} storylets")
+            
+            # Auto-assign coordinates to any storylets that still need them
+            additional_updates = SpatialNavigator.auto_assign_coordinates(db, new_storylet_ids)
+            if additional_updates > 0:
+                print(f"📍 Auto-assigned coordinates to {additional_updates} additional storylets")
+                
         except Exception as e:
             print(f"⚠️ Warning: Could not assign spatial positions: {e}")
+            # Try just the auto-assignment as fallback
+            try:
+                updates = SpatialNavigator.auto_assign_coordinates(db, new_storylet_ids)
+                if updates > 0:
+                    print(f"📍 Fallback: Auto-assigned coordinates to {updates} storylets")
+            except Exception as e2:
+                print(f"⚠️ Fallback also failed: {e2}")
         
         print(f"🌍 Generated world with {len(generated_locations)} locations: {', '.join(generated_locations)}")
         print(f"🎭 Identified themes: {', '.join(generated_themes)}")

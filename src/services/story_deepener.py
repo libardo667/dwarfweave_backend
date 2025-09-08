@@ -406,6 +406,7 @@ class StoryDeepener:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             
+            new_storylet_ids = []
             for bridge in bridge_storylets:
                 cursor.execute("""
                     INSERT INTO storylets (title, text_template, requires, choices, weight)
@@ -417,13 +418,32 @@ class StoryDeepener:
                     json.dumps(bridge['choices']),
                     bridge['weight']
                 ))
+                # Collect the new storylet ID
+                new_id = cursor.lastrowid
+                if new_id is not None:
+                    new_storylet_ids.append(new_id)
             
             conn.commit()
             conn.close()
             
-            results['bridge_storylets_created'] = len(bridge_storylets)
-        
-        # Add choice previews
+            # Auto-assign spatial coordinates to newly created bridge storylets
+            if new_storylet_ids:
+                try:
+                    from sqlalchemy.orm import sessionmaker
+                    from ..database import engine
+                    Session = sessionmaker(bind=engine)
+                    db_session = Session()
+                    
+                    from .spatial_navigator import SpatialNavigator
+                    updates = SpatialNavigator.auto_assign_coordinates(db_session, new_storylet_ids)
+                    if updates > 0:
+                        print(f"📍 Auto-assigned coordinates to {updates} bridge storylets")
+                    
+                    db_session.close()
+                except Exception as e:
+                    print(f"⚠️ Warning: Could not auto-assign coordinates to bridge storylets: {e}")
+            
+            results['bridge_storylets_created'] = len(bridge_storylets)        # Add choice previews
         if add_previews:
             self.add_choice_previews()
             results['choice_previews_added'] = 1

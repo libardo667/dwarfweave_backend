@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from fastapi import Body, Query
 from sqlalchemy.orm import Session
+import json
 
 from ..database import get_db
 from ..models import SessionVars, Storylet
@@ -269,7 +270,19 @@ def get_spatial_navigation(session_id: str, db: Session = Depends(get_db)):
         valid_locations = set()
         for s in available_storylets:
             try:
-                req = s.requires if isinstance(s.requires, dict) else json.loads(s.requires)
+                # Get the actual requires value from the storylet instance
+                requires_value = s.requires
+                if requires_value is None:
+                    continue
+                    
+                # Parse as JSON if it's a string, or use directly if it's already a dict
+                if isinstance(requires_value, str):
+                    req = json.loads(requires_value)
+                elif isinstance(requires_value, dict):
+                    req = requires_value
+                else:
+                    continue
+                    
                 if 'location' in req:
                     valid_locations.add(req['location'])
             except:

@@ -388,7 +388,23 @@ class AdvancedStateManager:
             # Standard variable conditions (existing logic)
             else:
                 var_value = self.variables.get(key)
-                if isinstance(requirements, dict):
+                
+                # Special handling for location requirements
+                if key == 'location':
+                    # Handle flexible location values that should match any location
+                    if requirements in ['any_realm', 'any_location', 'anywhere']:
+                        # These are flexible location requirements that match any current location
+                        continue  # Skip this requirement - it's satisfied
+                    elif requirements == 'in_vessel' and var_value in ['start', 'vessel', 'ship', 'craft']:
+                        # 'in_vessel' matches vessel-related locations  
+                        continue
+                    elif var_value == requirements:
+                        # Exact location match
+                        continue
+                    else:
+                        # Location requirement not met
+                        return False
+                elif isinstance(requirements, dict):
                     if not self._check_numeric_condition(var_value, requirements):
                         return False
                 else:
