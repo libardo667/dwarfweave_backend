@@ -63,6 +63,8 @@ def run_integration_tests():
     
     integration_tests = [
         ("tests/integration/system_summary.py", "System Status Summary"),
+        ("tests/integration/test_state_management_basic.py", "State Management - Basic Functions"),
+        ("tests/integration/test_state_management_advanced.py", "State Management - Advanced Scenarios"),
     ]
     
     results = []
