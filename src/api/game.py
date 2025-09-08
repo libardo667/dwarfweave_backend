@@ -221,14 +221,15 @@ def cleanup_old_sessions(db: Session = Depends(get_db)):
         # Calculate cutoff time (24 hours ago)
         cutoff_time = datetime.now(UTC) - timedelta(hours=24)
         
-        # Count sessions to be deleted
-        count_result = db.execute(
-            text("SELECT COUNT(*) FROM session_vars WHERE updated_at < :cutoff"),
+        # Get session IDs that will be deleted (for precise cache cleanup)
+        sessions_to_delete_result = db.execute(
+            text("SELECT session_id FROM session_vars WHERE updated_at < :cutoff"),
             {"cutoff": cutoff_time}
-        ).scalar()
+        ).fetchall()
         
-        # Ensure count_result is not None
-        sessions_to_delete = count_result or 0
+        # Extract the actual session IDs
+        deleted_session_ids = [row[0] for row in sessions_to_delete_result]
+        sessions_to_delete_count = len(deleted_session_ids)
         
         # Delete old sessions
         result = db.execute(
@@ -238,26 +239,23 @@ def cleanup_old_sessions(db: Session = Depends(get_db)):
         
         db.commit()
         
-        # Clear state manager cache for deleted sessions
+        # Clear state manager cache for deleted sessions (precise matching)
         global _state_managers
-        sessions_to_remove = []
+        removed_from_cache = 0
         
-        # Remove sessions from cache that correspond to deleted database entries
-        # This is a simple heuristic - in production you'd want more precise matching
-        cache_sessions = list(_state_managers.keys())
-        for i, session_id in enumerate(cache_sessions):
-            if i < sessions_to_delete:  # Remove roughly the same number as deleted from DB
-                sessions_to_remove.append(session_id)
+        # Remove only the specific session IDs that were deleted from the database
+        for session_id in deleted_session_ids:
+            if session_id in _state_managers:
+                _state_managers.pop(session_id, None)
+                removed_from_cache += 1
         
-        for session_id in sessions_to_remove:
-            _state_managers.pop(session_id, None)
-        
-        logging.info(f"🧹 Cleaned up {sessions_to_delete} old sessions")
+        logging.info(f"🧹 Cleaned up {sessions_to_delete_count} old sessions ({removed_from_cache} removed from cache)")
         
         return {
             "success": True,
-            "sessions_removed": sessions_to_delete,
-            "message": f"Cleaned up {sessions_to_delete} sessions older than 24 hours"
+            "sessions_removed": sessions_to_delete_count,
+            "cache_entries_removed": removed_from_cache,
+            "message": f"Cleaned up {sessions_to_delete_count} sessions older than 24 hours"
         }
         
     except Exception as e:

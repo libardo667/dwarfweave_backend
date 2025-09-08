@@ -425,13 +425,16 @@ body {
 }
 
 .game-container {
-    max-width: 700px;
+    max-width: 400px;
+    width: 100%;
     margin: 0 auto;
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
     border-radius: 20px;
     padding: 30px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    min-height: auto;
+    overflow: hidden;
 }
 
 .game-title {
@@ -479,58 +482,64 @@ body {
     display: inline-block;
     margin: 0 10px;
     padding: 10px 20px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.4);
     color: white;
     text-decoration: none;
     border-radius: 10px;
     font-weight: bold;
     transition: all 0.2s ease;
     cursor: pointer;
+    opacity: 1.0;
 }
 
 .nav-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.6);
     transform: translateY(-1px);
 }
 
-/* Spatial Navigation Compass Styles */
+/* Spatial Navigation Compass - Clean Build */
 .spatial-navigation {
+    width: 280px;
     margin: 20px auto;
-    max-width: 300px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .nav-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
     grid-template-rows: 1fr 1fr 1fr;
-    gap: 4px;
-    width: 100%;
-    height: 240px;
+    gap: 8px;
+    width: 250px;
+    height: 250px;
+    margin: 0 auto;
 }
 
 .nav-cell {
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
+    font-size: 0.9em;
     position: relative;
-    font-size: 0.8em;
 }
 
 .nav-cell:hover {
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.4);
-    transform: scale(1.05);
+    transform: scale(1.02);
 }
 
 .nav-cell.center {
     background: linear-gradient(45deg, #667eea, #764ba2);
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.3);
     cursor: default;
 }
 
@@ -539,35 +548,43 @@ body {
 }
 
 .direction-symbol {
-    font-size: 1.2em;
-    margin-bottom: 2px;
+    font-size: 1.4em;
+    margin-bottom: 4px;
+    line-height: 1;
 }
 
 .direction-name {
     font-size: 0.7em;
     font-weight: bold;
     opacity: 0.8;
+    margin-bottom: 2px;
 }
 
 .current-location {
-    font-size: 0.8em;
-    font-weight: bold;
+    font-size: 0.75em;
     text-align: center;
+    font-weight: bold;
     margin-top: 4px;
+    line-height: 1.1;
 }
 
 .location-preview {
-    font-size: 0.6em;
+    font-size: 0.65em;
     text-align: center;
     opacity: 0.7;
-    margin-top: 2px;
+    line-height: 1.1;
+    max-height: 20px;
+    overflow: hidden;
 }
 
 .nav-status {
     text-align: center;
-    margin-top: 10px;
-    font-size: 0.9em;
-    opacity: 0.8;
+    margin-top: 12px;
+    font-size: 0.85em;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
 }
 </style>
 
@@ -578,61 +595,61 @@ body {
         <p style="text-align: center;"><span class="spinner">�</span> Weaving your reality threads...</p>
     </div>
 
-    <!-- Inline Spatial Compass (uses same session as Game) -->
-    <div style="margin-top: 24px; text-align: center; opacity: 0.9;">
-        <div style="font-weight: 600; margin-bottom: 8px;">🧭 Spatial Compass</div>
-        <div class="spatial-navigation">
-            <div class="nav-grid" id="nav-grid-in-game">
-                <div class="nav-cell" data-direction="northwest">
-                    <span class="direction-symbol">↖</span>
-                    <span class="direction-name">NW</span>
-                    <div class="location-preview" id="nav-northwest"></div>
-                </div>
-                <div class="nav-cell" data-direction="north">
-                    <span class="direction-symbol">↑</span>
-                    <span class="direction-name">N</span>
-                    <div class="location-preview" id="nav-north"></div>
-                </div>
-                <div class="nav-cell" data-direction="northeast">
-                    <span class="direction-symbol">↗</span>
-                    <span class="direction-name">NE</span>
-                    <div class="location-preview" id="nav-northeast"></div>
-                </div>
-                <div class="nav-cell" data-direction="west">
-                    <span class="direction-symbol">←</span>
-                    <span class="direction-name">W</span>
-                    <div class="location-preview" id="nav-west"></div>
-                </div>
-                <div class="nav-cell center player-position">
-                    <div class="player-avatar">🧙‍♂️</div>
-                    <div class="current-location" id="current-location-display">(loading)</div>
-                </div>
-                <div class="nav-cell" data-direction="east">
-                    <span class="direction-symbol">→</span>
-                    <span class="direction-name">E</span>
-                    <div class="location-preview" id="nav-east"></div>
-                </div>
-                <div class="nav-cell" data-direction="southwest">
-                    <span class="direction-symbol">↙</span>
-                    <span class="direction-name">SW</span>
-                    <div class="location-preview" id="nav-southwest"></div>
-                </div>
-                <div class="nav-cell" data-direction="south">
-                    <span class="direction-symbol">↓</span>
-                    <span class="direction-name">S</span>
-                    <div class="location-preview" id="nav-south"></div>
-                </div>
-                <div class="nav-cell" data-direction="southeast">
-                    <span class="direction-symbol">↘</span>
-                    <span class="direction-name">SE</span>
-                    <div class="location-preview" id="nav-southeast"></div>
-                </div>
+    <!-- Spatial Navigation Compass - Clean Build -->
+    <div class="spatial-navigation">
+        <div style="text-align: center; font-weight: 600; margin-bottom: 12px; color: #feca57;">🧭 Spatial Compass</div>
+        
+        <div class="nav-grid" id="nav-grid-in-game">
+            <div class="nav-cell" data-direction="northwest">
+                <div class="direction-symbol">↖</div>
+                <div class="direction-name">NW</div>
+                <div class="location-preview" id="nav-northwest"></div>
             </div>
-            <div class="nav-status" id="nav-status">Ready to explore...</div>
+            <div class="nav-cell" data-direction="north">
+                <div class="direction-symbol">↑</div>
+                <div class="direction-name">N</div>
+                <div class="location-preview" id="nav-north"></div>
+            </div>
+            <div class="nav-cell" data-direction="northeast">
+                <div class="direction-symbol">↗</div>
+                <div class="direction-name">NE</div>
+                <div class="location-preview" id="nav-northeast"></div>
+            </div>
+            <div class="nav-cell" data-direction="west">
+                <div class="direction-symbol">←</div>
+                <div class="direction-name">W</div>
+                <div class="location-preview" id="nav-west"></div>
+            </div>
+            <div class="nav-cell center player-position">
+                <div class="direction-symbol">🧙‍♂️</div>
+                <div class="current-location" id="current-location-display">(loading)</div>
+            </div>
+            <div class="nav-cell" data-direction="east">
+                <div class="direction-symbol">→</div>
+                <div class="direction-name">E</div>
+                <div class="location-preview" id="nav-east"></div>
+            </div>
+            <div class="nav-cell" data-direction="southwest">
+                <div class="direction-symbol">↙</div>
+                <div class="direction-name">SW</div>
+                <div class="location-preview" id="nav-southwest"></div>
+            </div>
+            <div class="nav-cell" data-direction="south">
+                <div class="direction-symbol">↓</div>
+                <div class="direction-name">S</div>
+                <div class="location-preview" id="nav-south"></div>
+            </div>
+            <div class="nav-cell" data-direction="southeast">
+                <div class="direction-symbol">↘</div>
+                <div class="direction-name">SE</div>
+                <div class="location-preview" id="nav-southeast"></div>
+            </div>
         </div>
+        
+        <div class="nav-status" id="nav-status">Ready to explore...</div>
     </div>
     
-    <div class="nav-links">
+    <div class="nav-links" style="margin-top: 20px; padding-top: 15px;">
         <span class="nav-btn" onclick="document.querySelector('a[data-passage=WorldBuilder]').click()">✨ Weave New Reality</span>
         <span class="nav-btn" onclick="location.reload()">🔄 Restart</span>
         <span class="nav-btn" onclick="document.querySelector('a[data-passage=Start]').click()">🏠 Home</span>
@@ -640,177 +657,7 @@ body {
 </div>
 
 <script>
-// ========== Spatial Navigation System (Inline) ==========
-window.SpatialNavigation = {
-  sessionId: null,
-  
-  init: function(sessionId) {
-    console.log('🧭 Initializing SpatialNavigation with session:', sessionId);
-    this.sessionId = sessionId || 'default';
-    
-    // Check if elements exist before attaching listeners
-    console.log('🔍 Checking for navigation elements...');
-    const navCells = document.querySelectorAll('.nav-cell[data-direction]');
-    const locationDisplay = document.getElementById('current-location-display');
-    console.log(`📊 Found ${navCells.length} navigation cells`);
-    console.log('📊 Location display element:', locationDisplay);
-    
-    this.attachEventListeners();
-        // Ensure backend session has an initial location, then load nav
-        this.ensureLocation()
-            .then(() => {
-                console.log('✅ ensureLocation completed, loading navigation...');
-                return this.loadNavigation();
-            })
-            .catch(error => {
-                console.warn('⚠️ ensureLocation failed, trying navigation anyway:', error);
-                return this.loadNavigation();
-            });
-  },
-  
-  attachEventListeners: function() {
-    console.log('🔗 Attaching event listeners...');
-    // Add click handlers to navigation cells
-    document.querySelectorAll('.nav-cell[data-direction]').forEach(cell => {
-      cell.addEventListener('click', (e) => {
-        const direction = e.currentTarget.dataset.direction;
-        console.log('👆 Direction clicked:', direction);
-        this.moveInDirection(direction);
-      });
-    });
-    console.log('✅ Event listeners attached to', document.querySelectorAll('.nav-cell[data-direction]').length, 'cells');
-  },
-
-  async ensureLocation() {
-    try {
-        const initialLoc = (typeof State !== 'undefined' && State.variables && State.variables.location)
-            ? State.variables.location : 'start';
-
-        await fetch('http://localhost:8000/api/next', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                session_id: this.sessionId || 'default',
-                vars: { location: initialLoc }
-            })
-        });
-    } catch (e) {
-        console.warn('ensureLocation failed:', e);
-    }
-  },
-  
-  async loadNavigation() {
-    console.log('📡 Loading navigation data for session:', this.sessionId);
-    this.showStatus('Loading navigation...', 'loading');
-    
-    try {
-      const response = await fetch(`http://localhost:8000/api/spatial/navigation/${this.sessionId}`);
-      const data = await response.json();
-      
-      if (response.ok) {
-        console.log('📊 Navigation data received:', data);
-        this.updateNavigationUI(data);
-      } else {
-        console.error('❌ Navigation load failed:', data);
-        this.showStatus('Failed to load navigation: ' + data.error, 'error');
-      }
-    } catch (error) {
-      console.error('🚨 Navigation load error:', error);
-      this.showStatus('Connection error: ' + error.message, 'error');
-    }
-  },
-  
-  updateNavigationUI: function(data) {
-    const directions = data.directions || {};
-    
-    console.log('🗺️ Navigation data received:', data);
-    console.log('🗺️ Current location display element:', document.getElementById('current-location-display'));
-    
-    // Update current location display
-    const locationDisplay = document.getElementById('current-location-display');
-    if (data.current_location && locationDisplay) {
-      locationDisplay.textContent = data.current_location;
-      console.log('✅ Updated location display to:', data.current_location);
-    } else {
-      console.error('❌ Failed to update location display:', { 
-        current_location: data.current_location, 
-        element: locationDisplay 
-      });
-    }
-    
-    // Update each direction cell
-    Object.keys(directions).forEach(direction => {
-      const cell = document.querySelector(`[data-direction="${direction}"]`);
-      const preview = document.getElementById(`nav-${direction}`);
-      
-      if (!cell) return;
-      
-      const target = directions[direction];
-      
-      if (target === null) {
-        // No location in this direction
-        cell.className = 'nav-cell empty';
-        if (preview) preview.textContent = '';
-        cell.style.cursor = 'default';
-        cell.title = 'No path this way';
-      } else if (target.accessible) {
-        // Accessible location
-        cell.className = 'nav-cell accessible';
-        if (preview) preview.textContent = target.title;
-        cell.style.cursor = 'pointer';
-        cell.title = `Go to ${target.title}`;
-      } else {
-        // Blocked location
-        cell.className = 'nav-cell blocked';
-        if (preview) preview.textContent = target.title;
-        cell.style.cursor = 'not-allowed';
-        cell.title = `Cannot access ${target.title}: ${target.reason || 'Requirements not met'}`;
-      }
-    });
-    
-    this.showStatus('Navigation updated', 'success');
-  },
-  
-  async moveInDirection(direction) {
-    this.showStatus(`Moving ${direction}...`, 'loading');
-    
-    try {
-      const response = await fetch(`http://localhost:8000/api/spatial/move/${this.sessionId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ direction: direction })
-      });
-      
-      const result = await response.json();
-      
-      if (response.ok) {
-        console.log('✅ Move successful:', result);
-        // Reload navigation to reflect new position
-        this.loadNavigation();
-        this.showStatus(`Moved ${direction}!`, 'success');
-      } else {
-        console.error('❌ Move failed:', result);
-        this.showStatus(`Cannot move ${direction}: ${result.detail || 'Unknown error'}`, 'error');
-      }
-    } catch (error) {
-      console.error('🚨 Move error:', error);
-      this.showStatus('Connection error: ' + error.message, 'error');
-    }
-  },
-  
-  showStatus: function(message, type = 'info') {
-    const statusEl = document.getElementById('nav-status');
-    if (statusEl) {
-      statusEl.textContent = message;
-      statusEl.className = `nav-status ${type}`;
-    }
-    console.log(`📢 Status: ${message} (${type})`);
-  }
-};
-
-console.log('✅ SpatialNavigation object loaded inline!', window.SpatialNavigation);
+console.log('✅ SpatialNavigation object will be loaded later in the file');
 
 // This connects to your existing game logic
 (function() {
@@ -925,17 +772,26 @@ console.log('✅ SpatialNavigation object loaded inline!', window.SpatialNavigat
 
     // Initialize spatial navigation within Game using same session
     console.log('🚀 About to initialize spatial navigation...');
-    console.log('🔍 SpatialNavigation available:', !!window.SpatialNavigation);
     
-    // Assign positions, then init (with direct call since it's now inline)
+    // Function to try initializing SpatialNavigation
+    function initSpatialNavWhenReady() {
+        console.log('🔍 SpatialNavigation available:', !!window.SpatialNavigation);
+        
+        if (window.SpatialNavigation) {
+            console.log('🧭 Initializing SpatialNavigation with session:', sessionId);
+            window.SpatialNavigation.init(sessionId);
+        } else {
+            console.log('⏳ SpatialNavigation not yet loaded, retrying in 500ms...');
+            setTimeout(initSpatialNavWhenReady, 500);
+        }
+    }
+    
+    // Assign positions, then init
     fetch('http://localhost:8000/api/spatial/assign-positions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
     }).finally(() => {
-        setTimeout(() => {
-            console.log('🧭 Initializing SpatialNavigation with session:', sessionId);
-            window.SpatialNavigation.init(sessionId);
-        }, 1000);
+        setTimeout(initSpatialNavWhenReady, 1000);
     });
 })();
 </script>
@@ -946,11 +802,7 @@ console.log('✅ SpatialNavigation object loaded inline!', window.SpatialNavigat
     [[Go to Start->Start]]
 </div>
 
-<!-- Hidden navigation links -->
-<div style="display: none;">
-    [[Go to WorldBuilder->WorldBuilder]]
-    [[Go to Start->Start]]
-</div>:: StoryScript [script]
+:: StoryScript [script]
 // Global SugarCube functions available to all passages
 window.goToPassage = function(passageName) {
     Engine.play(passageName);
@@ -1439,17 +1291,16 @@ window.WorldWeaver = {
                     const midX = (x1 + x2) / 2;
                     const midY = (y1 + y2) / 2 - 30; // Curve upward
                     
-                    mapHTML += `
-                        <path d="M ${x1} ${y1} Q ${midX} ${midY} ${x2} ${y2}" 
-                              stroke="rgba(254, 202, 87, 0.6)" 
-                              stroke-width="3" 
-                              fill="none"
-                              stroke-dasharray="8,4">
-                            <animate attributeName="stroke-dashoffset" values="0;-12" dur="2s" repeatCount="indefinite"/>
-                        </path>
-                        <circle cx="${x1}" cy="${y1}" r="2" fill="rgba(254, 202, 87, 0.8)"/>
-                        <circle cx="${x2}" cy="${y2}" r="2" fill="rgba(254, 202, 87, 0.8)"/>
-                    `;
+                    mapHTML += 
+                        '<path d="M ' + x1 + ' ' + y1 + ' Q ' + midX + ' ' + midY + ' ' + x2 + ' ' + y2 + '" ' +
+                              'stroke="rgba(254, 202, 87, 0.6)" ' +
+                              'stroke-width="3" ' +
+                              'fill="none" ' +
+                              'stroke-dasharray="8,4">' +
+                            '<animate attributeName="stroke-dashoffset" values="0;-12" dur="2s" repeatCount="indefinite"/>' +
+                        '</path>' +
+                        '<circle cx="' + x1 + '" cy="' + y1 + '" r="2" fill="rgba(254, 202, 87, 0.8)"/>' +
+                        '<circle cx="' + x2 + '" cy="' + y2 + '" r="2" fill="rgba(254, 202, 87, 0.8)"/>';
                 }
             });
             

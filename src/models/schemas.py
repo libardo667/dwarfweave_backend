@@ -45,7 +45,7 @@ class StoryletIn(BaseModel):
 
 class SuggestReq(BaseModel):
     """Request model for suggesting storylets."""
-    n: int = 3
+    n: int = Field(default=3, ge=1, le=20, description="Number of storylets to suggest (1-20)")
     themes: List[str] = Field(default_factory=list)
     bible: Dict[str, Any] = Field(default_factory=dict)
 
@@ -57,7 +57,7 @@ class SuggestResp(BaseModel):
 
 class GenerateStoryletRequest(BaseModel):
     """Request to generate storylets with AI assistance."""
-    count: int = Field(default=3, description="Number of storylets to generate")
+    count: int = Field(default=3, ge=1, le=15, description="Number of storylets to generate (1-15)")
     themes: List[str] = Field(default_factory=list, description="Themes to incorporate")
     intelligent: bool = Field(default=True, description="Use intelligent analysis")
 

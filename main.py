@@ -2,7 +2,7 @@
 
 import os
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -47,4 +47,4 @@ app.include_router(author.router, prefix="/author", tags=["author"])
 @app.get('/health')
 def health():
     """Health check endpoint."""
-    return {'ok': True, "time": datetime.utcnow().isoformat() + "Z"}
+    return {'ok': True, "time": datetime.now(timezone.utc).isoformat() + "Z"}

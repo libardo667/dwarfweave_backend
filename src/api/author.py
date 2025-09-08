@@ -104,6 +104,12 @@ def author_commit(payload: SuggestResp, db: Session = Depends(get_db)):
 @router.post('/populate')
 def populate_storylets(target_count: int = 20, db: Session = Depends(get_db)):
     """Auto-populate the database with AI-generated storylets."""
+    # Validate target_count parameter
+    if target_count < 1:
+        raise HTTPException(status_code=400, detail="target_count must be at least 1")
+    if target_count > 100:
+        raise HTTPException(status_code=400, detail="target_count cannot exceed 100")
+    
     try:
         added = auto_populate_storylets(db, target_count)
         current_count = db.query(Storylet).count()

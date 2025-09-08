@@ -78,7 +78,7 @@ def seed_if_empty(db: Session) -> None:
             requires={"has_pickaxe": False},
             choices=[
                 {"label": "Search tool rack", "set": {"has_pickaxe": True}},
-                {"label": " improvise with a rock", "set": {"danger": {"inc": 1}}},
+                {"label": "Improvise with a rock", "set": {"danger": {"inc": 1}}},
             ],
             weight=1.0,
         ),

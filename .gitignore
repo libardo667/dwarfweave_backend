@@ -162,3 +162,5 @@ logs/
 *.tmp
 *.temp
 .temp/
+
+notes/
