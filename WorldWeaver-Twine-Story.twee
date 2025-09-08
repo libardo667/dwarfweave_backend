@@ -378,6 +378,12 @@ async function generateWorld() {
         const result = await response.json();
         
         if (response.ok) {
+            // Clear previous journey data since we're starting a new world
+            if (typeof WorldWeaver !== 'undefined') {
+                WorldWeaver.debug.resetProgress();
+                console.log('🗺️ Cleared previous journey map for new world');
+            }
+            
             status.className = 'status success';
             status.innerHTML = `
                 🎉 Success! Wove ${result.storylets_created} reality threads!<br><br>
@@ -558,6 +564,11 @@ body {
         const choice = window.currentChoices[choiceIndex];
         const newVars = { ...window.currentVars, ...choice.set };
         
+        // Track the choice in WorldWeaver analytics
+        if (typeof WorldWeaver !== 'undefined' && WorldWeaver.analytics) {
+            WorldWeaver.analytics.trackChoice(choice.label, 'Game Storylet');
+        }
+        
         // Show loading state
         document.getElementById('game-content').innerHTML = `
             <div style="text-align: center; padding: 40px 0;">
@@ -640,6 +651,7 @@ window.WorldWeaver = {
         trackChoice: function(choiceLabel, storyletTitle) {
             WorldWeaver.progressMap.decision_count++;
             console.log(`🌟 Choice made: "${choiceLabel}" in "${storyletTitle}"`);
+            console.log(`📊 Total choices made: ${WorldWeaver.progressMap.decision_count}`);
             
             // Store in session storage for persistence
             if (typeof Storage !== "undefined") {
@@ -657,6 +669,14 @@ window.WorldWeaver = {
                 }
                 
                 localStorage.setItem('worldweaver_journey', JSON.stringify(journeyLog));
+                console.log(`💾 Stored journey entry. Total entries: ${journeyLog.length}`);
+                
+                // Update progress indicator if it exists
+                setTimeout(() => {
+                    if (document.getElementById('progress-indicator')) {
+                        WorldWeaver.ui.showProgressIndicator();
+                    }
+                }, 100);
             }
         },
         
@@ -807,73 +827,156 @@ window.WorldWeaver = {
                         <div style="font-size: 3em; margin-bottom: 20px;">🌌</div>
                         <h3>Your Reality Threads Await</h3>
                         <p>Begin your journey to see the tapestry unfold...</p>
+                        <p style="margin-top: 20px; font-size: 0.9em; opacity: 0.7;">
+                            💡 Tip: Generate a new world to start weaving reality threads!
+                        </p>
+                        <button onclick="WorldWeaver.map.hideRealityMap(); document.querySelector('a[data-passage=WorldBuilder]').click()" style="
+                            background: linear-gradient(45deg, #667eea, #764ba2);
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 20px;
+                            cursor: pointer;
+                            margin-top: 15px;
+                        ">✨ Weave New Reality</button>
                     </div>
                 `;
             }
             
+            // Create a proper graph layout
+            const mapWidth = 800;
+            const mapHeight = Math.max(400, Math.ceil(journey.length / 4) * 150 + 100);
+            
             let mapHTML = `
-                <div style="padding: 20px;">
-                    <div style="text-align: center; margin-bottom: 30px;">
-                        <h2 style="margin: 0; color: #feca57;">🗺️ Reality Tapestry</h2>
+                <div style="padding: 20px; height: 100vh; overflow: auto;">
+                    <div style="text-align: center; margin-bottom: 30px; position: sticky; top: 0; background: rgba(102, 126, 234, 0.95); padding: 15px; border-radius: 10px; backdrop-filter: blur(10px);">
+                        <h2 style="margin: 0; color: #feca57;">🗺️ Reality Thread Graph</h2>
                         <p style="margin: 5px 0; opacity: 0.8;">${stats.decisions_made} threads woven • ${stats.storylets_visited} realms explored</p>
+                        <button onclick="WorldWeaver.map.toggleFullscreen()" style="
+                            background: rgba(255,255,255,0.2);
+                            border: 1px solid rgba(255,255,255,0.3);
+                            color: white;
+                            padding: 5px 10px;
+                            border-radius: 15px;
+                            cursor: pointer;
+                            margin: 5px;
+                        ">⛶ Toggle Fullscreen</button>
                     </div>
                     
-                    <div style="position: relative; min-height: 400px;">
+                    <div style="position: relative; width: ${mapWidth}px; height: ${mapHeight}px; margin: 0 auto; background: rgba(0,0,0,0.1); border-radius: 15px; overflow: visible;">
+                        <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;">
             `;
             
-            // Create visual thread connections
+            // Generate connected path layout
+            const nodeSize = 60;
+            const padding = 80;
+            const cols = 4;
+            
+            // Draw connections first (behind nodes)
             journey.forEach((entry, index) => {
-                const x = 50 + (index % 4) * 150;
-                const y = 80 + Math.floor(index / 4) * 120;
+                if (index < journey.length - 1) {
+                    const col1 = index % cols;
+                    const row1 = Math.floor(index / cols);
+                    const col2 = (index + 1) % cols;
+                    const row2 = Math.floor((index + 1) / cols);
+                    
+                    const x1 = padding + col1 * (mapWidth - 2 * padding) / (cols - 1);
+                    const y1 = padding + row1 * 120;
+                    const x2 = padding + col2 * (mapWidth - 2 * padding) / (cols - 1);
+                    const y2 = padding + row2 * 120;
+                    
+                    // Curved connection line
+                    const midX = (x1 + x2) / 2;
+                    const midY = (y1 + y2) / 2 - 30; // Curve upward
+                    
+                    mapHTML += `
+                        <path d="M ${x1} ${y1} Q ${midX} ${midY} ${x2} ${y2}" 
+                              stroke="rgba(254, 202, 87, 0.6)" 
+                              stroke-width="3" 
+                              fill="none"
+                              stroke-dasharray="8,4">
+                            <animate attributeName="stroke-dashoffset" values="0;-12" dur="2s" repeatCount="indefinite"/>
+                        </path>
+                        <circle cx="${x1}" cy="${y1}" r="2" fill="rgba(254, 202, 87, 0.8)"/>
+                        <circle cx="${x2}" cy="${y2}" r="2" fill="rgba(254, 202, 87, 0.8)"/>
+                    `;
+                }
+            });
+            
+            mapHTML += `</svg>`;
+            
+            // Draw nodes on top of connections
+            journey.forEach((entry, index) => {
+                const col = index % cols;
+                const row = Math.floor(index / cols);
+                const x = padding + col * (mapWidth - 2 * padding) / (cols - 1) - nodeSize/2;
+                const y = padding + row * 120 - nodeSize/2;
                 const isRecent = index >= journey.length - 3;
+                const isFirst = index === 0;
+                const isLast = index === journey.length - 1;
                 
-                // Thread node
+                // Node styling based on position
+                let nodeStyle = '';
+                if (isFirst) {
+                    nodeStyle = 'linear-gradient(45deg, #2ecc71, #27ae60)';
+                } else if (isLast) {
+                    nodeStyle = 'linear-gradient(45deg, #e74c3c, #c0392b)';
+                } else if (isRecent) {
+                    nodeStyle = 'linear-gradient(45deg, #feca57, #ff6b6b)';
+                } else {
+                    nodeStyle = 'linear-gradient(45deg, #667eea, #764ba2)';
+                }
+                
                 mapHTML += `
                     <div style="
                         position: absolute;
                         left: ${x}px;
                         top: ${y}px;
-                        width: 80px;
-                        height: 80px;
-                        background: ${isRecent ? 'linear-gradient(45deg, #feca57, #ff6b6b)' : 'linear-gradient(45deg, #667eea, #764ba2)'};
+                        width: ${nodeSize}px;
+                        height: ${nodeSize}px;
+                        background: ${nodeStyle};
                         border-radius: 50%;
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 1.2em;
+                        font-size: 1.3em;
                         cursor: pointer;
                         transition: all 0.3s ease;
                         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                        border: ${isRecent ? '3px solid #fff' : '2px solid rgba(255,255,255,0.5)'};
-                    " title="${entry.storylet}: ${entry.choice}" onclick="WorldWeaver.map.showThreadDetail(${index})">
+                        border: 3px solid ${isFirst ? '#fff' : isLast ? '#fff' : isRecent ? '#fff' : 'rgba(255,255,255,0.5)'};
+                        z-index: 10;
+                    " 
+                    title="Step ${index + 1}: ${entry.choice}" 
+                    onclick="WorldWeaver.map.showThreadDetail(${index})"
+                    onmouseenter="this.style.transform='scale(1.2)'; this.style.zIndex='20'"
+                    onmouseleave="this.style.transform='scale(1)'; this.style.zIndex='10'">
                         ${WorldWeaver.map.getThreadIcon(entry.choice)}
+                        <div style="
+                            position: absolute;
+                            top: -25px;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            background: rgba(0,0,0,0.8);
+                            color: white;
+                            padding: 2px 6px;
+                            border-radius: 8px;
+                            font-size: 0.7em;
+                            white-space: nowrap;
+                            pointer-events: none;
+                        ">${index + 1}</div>
                     </div>
                 `;
-                
-                // Connection line to next thread
-                if (index < journey.length - 1) {
-                    const nextX = 50 + ((index + 1) % 4) * 150;
-                    const nextY = 80 + Math.floor((index + 1) / 4) * 120;
-                    
-                    mapHTML += `
-                        <svg style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: -1;">
-                            <line x1="${x + 40}" y1="${y + 40}" x2="${nextX + 40}" y2="${nextY + 40}" 
-                                  stroke="rgba(255,255,255,0.3)" stroke-width="2" stroke-dasharray="5,5">
-                                <animate attributeName="stroke-dashoffset" values="0;-10" dur="2s" repeatCount="indefinite"/>
-                            </line>
-                        </svg>
-                    `;
-                }
             });
             
             mapHTML += `
                     </div>
                     
                     <div style="text-align: center; margin-top: 30px; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 10px;">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                            <div><strong>🌟 Recent Threads</strong><br><small>Last 3 choices</small></div>
-                            <div><strong>⚡ Path Density</strong><br><small>${Math.round(stats.decisions_made / Math.max(stats.session_duration / 60, 1))} choices/min</small></div>
-                            <div><strong>🌌 Reality Depth</strong><br><small>${stats.storylets_visited} unique locations</small></div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div><strong>🟢 Start</strong><br><small>Your first choice</small></div>
+                            <div><strong>🟡 Recent</strong><br><small>Last 3 threads</small></div>
+                            <div><strong>🔴 Current</strong><br><small>Latest position</small></div>
+                            <div><strong>⚡ Speed</strong><br><small>${Math.round(stats.decisions_made / Math.max(stats.session_duration / 60, 1))} choices/min</small></div>
                         </div>
                         <button onclick="WorldWeaver.map.exportJourney()" style="
                             background: linear-gradient(45deg, #2ecc71, #27ae60);
@@ -893,6 +996,15 @@ window.WorldWeaver = {
                             cursor: pointer;
                             margin: 5px;
                         ">🗑️ Clear History</button>
+                        <button onclick="WorldWeaver.debug.cleanupSessions()" style="
+                            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 20px;
+                            cursor: pointer;
+                            margin: 5px;
+                        ">🧹 Cleanup Sessions</button>
                     </div>
                 </div>
             `;
@@ -903,14 +1015,34 @@ window.WorldWeaver = {
         // Get appropriate icon for thread choice
         getThreadIcon: function(choice) {
             const choice_lower = choice.toLowerCase();
-            if (choice_lower.includes('explore') || choice_lower.includes('venture')) return '🔍';
-            if (choice_lower.includes('magic') || choice_lower.includes('spell')) return '✨';
-            if (choice_lower.includes('fight') || choice_lower.includes('attack')) return '⚔️';
-            if (choice_lower.includes('help') || choice_lower.includes('assist')) return '🤝';
-            if (choice_lower.includes('run') || choice_lower.includes('flee')) return '💨';
-            if (choice_lower.includes('talk') || choice_lower.includes('speak')) return '💬';
-            if (choice_lower.includes('learn') || choice_lower.includes('study')) return '📚';
-            if (choice_lower.includes('craft') || choice_lower.includes('create')) return '🔨';
+            
+            // Location-based icons
+            if (choice_lower.includes('office') || choice_lower.includes('work')) return '🏢';
+            if (choice_lower.includes('apartment') || choice_lower.includes('home')) return '🏠';
+            if (choice_lower.includes('park') || choice_lower.includes('outside')) return '🌳';
+            if (choice_lower.includes('café') || choice_lower.includes('coffee') || choice_lower.includes('restaurant')) return '☕';
+            
+            // Action-based icons
+            if (choice_lower.includes('investigate') || choice_lower.includes('examine') || choice_lower.includes('look')) return '🔍';
+            if (choice_lower.includes('take') || choice_lower.includes('grab') || choice_lower.includes('pick')) return '👆';
+            if (choice_lower.includes('package') || choice_lower.includes('box')) return '📦';
+            if (choice_lower.includes('map') || choice_lower.includes('follow')) return '🗺️';
+            if (choice_lower.includes('reveal') || choice_lower.includes('show') || choice_lower.includes('talent')) return '🎭';
+            if (choice_lower.includes('participate') || choice_lower.includes('join')) return '🤝';
+            if (choice_lower.includes('sleep') || choice_lower.includes('rest') || choice_lower.includes('bed')) return '😴';
+            if (choice_lower.includes('coffee') || choice_lower.includes('brew') || choice_lower.includes('drink')) return '☕';
+            if (choice_lower.includes('wave') || choice_lower.includes('greet')) return '👋';
+            if (choice_lower.includes('ignore') || choice_lower.includes('avoid')) return '🙈';
+            if (choice_lower.includes('embrace') || choice_lower.includes('accept')) return '🤗';
+            if (choice_lower.includes('retreat') || choice_lower.includes('return') || choice_lower.includes('normal')) return '�';
+            if (choice_lower.includes('try') || choice_lower.includes('special') || choice_lower.includes('experiment')) return '🧪';
+            if (choice_lower.includes('stick') || choice_lower.includes('keep') || choice_lower.includes('usual')) return '📌';
+            
+            // Mood/personality icons
+            if (choice_lower.includes('enthusiastic') || choice_lower.includes('excited')) return '🎉';
+            if (choice_lower.includes('quiet') || choice_lower.includes('silent') || choice_lower.includes('sidelines')) return '🤫';
+            if (choice_lower.includes('quirk') || choice_lower.includes('strange') || choice_lower.includes('odd')) return '🎪';
+            
             return '🌟'; // Default icon
         },
         
@@ -1046,6 +1178,30 @@ window.WorldWeaver = {
                 WorldWeaver.map.hideRealityMap();
                 alert('✅ Reality thread history cleared!');
             }
+        },
+        
+        // Toggle fullscreen mode
+        toggleFullscreen: function() {
+            const overlay = document.getElementById('reality-map-overlay');
+            if (!overlay) return;
+            
+            if (overlay.style.position === 'fixed') {
+                // Exit fullscreen
+                overlay.style.position = 'fixed';
+                overlay.style.width = '100%';
+                overlay.style.height = '100%';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+            } else {
+                // Enter fullscreen
+                if (overlay.requestFullscreen) {
+                    overlay.requestFullscreen();
+                } else if (overlay.webkitRequestFullscreen) {
+                    overlay.webkitRequestFullscreen();
+                } else if (overlay.msRequestFullscreen) {
+                    overlay.msRequestFullscreen();
+                }
+            }
         }
     },
     
@@ -1072,6 +1228,30 @@ window.WorldWeaver = {
                 localStorage.removeItem('worldweaver_journey');
             }
             console.log('🔄 Progress reset');
+        },
+        
+        // Cleanup old sessions from database
+        cleanupSessions: async function() {
+            if (!confirm('🧹 Clean up old database sessions? This will remove sessions older than 24 hours.')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/cleanup-sessions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(`✅ Cleaned up ${result.sessions_removed || 0} old sessions!`);
+                } else {
+                    alert('❌ Failed to cleanup sessions. Check if server is running.');
+                }
+            } catch (error) {
+                console.error('Session cleanup error:', error);
+                alert('❌ Error cleaning up sessions: ' + error.message);
+            }
         }
     }
 };
@@ -1097,17 +1277,7 @@ $(document).on(':passagestart', function(ev) {
     }
 });
 
-// Enhanced choice tracking for makeChoice function
-const originalMakeChoice = window.makeChoice;
-if (originalMakeChoice) {
-    window.makeChoice = function(choiceIndex) {
-        const choice = window.currentChoices && window.currentChoices[choiceIndex];
-        if (choice) {
-            WorldWeaver.analytics.trackChoice(choice.label, 'Current Storylet');
-        }
-        return originalMakeChoice.call(this, choiceIndex);
-    };
-}
+// Choice tracking is now integrated directly into the makeChoice function above
 
 :: Stylesheet [stylesheet]
 .spinner {

@@ -344,8 +344,7 @@ Focus on creating an interconnected web of storylets where choices in one storyl
                 {"role": "system", "content": "You are an expert interactive fiction world builder. Create interconnected storylets that form a cohesive narrative ecosystem."},
                 {"role": "user", "content": world_prompt}
             ],
-            temperature=0.8,  # More creative for world building
-            max_tokens=4000
+            max_completion_tokens=4000
         )
         
         response_text = (response.choices[0].message.content or "").strip()
@@ -474,8 +473,7 @@ Make this feel like a natural, immersive beginning to THIS specific world, not a
                 {"role": "system", "content": "You are an expert at creating immersive, world-specific story openings that perfectly match the generated content."},
                 {"role": "user", "content": starting_prompt}
             ],
-            temperature=0.7,
-            max_tokens=800
+            max_completion_tokens=800
         )
         
         response_text = (response.choices[0].message.content or "").strip()

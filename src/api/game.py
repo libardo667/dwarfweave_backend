@@ -179,3 +179,58 @@ def update_environment(session_id: str, changes: Dict[str, Any],
             "mood_modifiers": state_manager.environment.get_mood_modifier()
         }
     }
+
+
+@router.post('/cleanup-sessions')
+def cleanup_old_sessions(db: Session = Depends(get_db)):
+    """Clean up sessions older than 24 hours."""
+    from datetime import datetime, timedelta
+    from sqlalchemy import text
+    
+    try:
+        # Calculate cutoff time (24 hours ago)
+        cutoff_time = datetime.utcnow() - timedelta(hours=24)
+        
+        # Count sessions to be deleted
+        count_result = db.execute(
+            text("SELECT COUNT(*) FROM session_vars WHERE updated_at < :cutoff"),
+            {"cutoff": cutoff_time}
+        ).scalar()
+        
+        # Ensure count_result is not None
+        sessions_to_delete = count_result or 0
+        
+        # Delete old sessions
+        result = db.execute(
+            text("DELETE FROM session_vars WHERE updated_at < :cutoff"),
+            {"cutoff": cutoff_time}
+        )
+        
+        db.commit()
+        
+        # Clear state manager cache for deleted sessions
+        global _state_managers
+        sessions_to_remove = []
+        
+        # Remove sessions from cache that correspond to deleted database entries
+        # This is a simple heuristic - in production you'd want more precise matching
+        cache_sessions = list(_state_managers.keys())
+        for i, session_id in enumerate(cache_sessions):
+            if i < sessions_to_delete:  # Remove roughly the same number as deleted from DB
+                sessions_to_remove.append(session_id)
+        
+        for session_id in sessions_to_remove:
+            _state_managers.pop(session_id, None)
+        
+        logging.info(f"🧹 Cleaned up {sessions_to_delete} old sessions")
+        
+        return {
+            "success": True,
+            "sessions_removed": sessions_to_delete,
+            "message": f"Cleaned up {sessions_to_delete} sessions older than 24 hours"
+        }
+        
+    except Exception as e:
+        db.rollback()
+        logging.error(f"❌ Session cleanup failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Session cleanup failed: {str(e)}")
