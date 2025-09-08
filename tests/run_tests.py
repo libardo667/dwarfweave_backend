@@ -23,9 +23,9 @@ def run_test(test_path, description):
     print("=" * 50)
     
     try:
-        result = subprocess.run([sys.executable, test_path], 
-                              capture_output=False, 
-                              cwd=project_root)
+        result = subprocess.run(
+            [sys.executable, test_path], capture_output=False, cwd=project_root
+        )
         if result.returncode == 0:
             print(f"✅ {description} - PASSED")
         else:

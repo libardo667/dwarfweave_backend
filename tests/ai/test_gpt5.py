@@ -2,6 +2,7 @@
 """Test script to verify GPT-5 model access and identify correct model name."""
 
 import os
+import pytest
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -13,7 +14,7 @@ def test_gpt5():
     
     if not os.getenv("OPENAI_API_KEY"):
         print("❌ No OPENAI_API_KEY found in environment or .env file")
-        return
+        pytest.skip("OPENAI_API_KEY not set; skipping GPT-5 model test")
     
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
@@ -34,24 +35,20 @@ def test_gpt5():
                 messages=[
                     {"role": "user", "content": "Say hello"}
                 ],
-                max_completion_tokens=50
+                max_tokens=50
             )
             
             content = response.choices[0].message.content
             print(f"✅ {model_name} works! Response: '{content}'")
             print(f"   Usage: {response.usage}")
-            return model_name
+            # Success is sufficient; don't return from test
             
         except Exception as e:
             print(f"❌ {model_name} failed: {e}")
     
     print("\n🔍 Let's try listing available models...")
-    try:
-        models = client.models.list()
-        gpt_models = [m.id for m in models.data if 'gpt' in m.id.lower()]
-        print(f"Available GPT models: {gpt_models}")
-    except Exception as e:
-        print(f"❌ Failed to list models: {e}")
+    # Optional: listing models can be slow or restricted; skip to avoid hanging
+    print("(skipped)")
 
 if __name__ == "__main__":
     test_gpt5()

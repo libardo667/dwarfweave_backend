@@ -170,7 +170,7 @@ def test_all_fixes():
     print(f"   - Ready for Phase 2 implementation")
     print("=" * 60)
     
-    return True
+    # No return; successful asserts indicate pass
 
 if __name__ == "__main__":
     test_all_fixes()

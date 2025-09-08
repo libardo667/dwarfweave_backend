@@ -163,7 +163,7 @@ def test_advanced_scenarios():
     print("   - Dynamic story events")
     print("   - Change tracking and history")
     
-    return True
+    # No return; asserts validate behavior
 
 if __name__ == "__main__":
     test_advanced_scenarios()

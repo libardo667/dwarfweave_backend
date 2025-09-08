@@ -7,7 +7,7 @@ and environmental storytelling techniques.
 """
 
 from typing import Any, Dict, List, Optional, Set, Union
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from dataclasses import dataclass, field
 from enum import Enum
 import json
@@ -32,7 +32,7 @@ class StateChangeType(Enum):
 @dataclass
 class StateChange:
     """Records a single state change for history tracking."""
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     change_type: StateChangeType = StateChangeType.SET
     variable: str = ""
     old_value: Any = None
@@ -52,7 +52,7 @@ class ItemState:
     properties: Dict[str, Any] = field(default_factory=dict)
     location: Optional[str] = None  # where item is stored
     last_used: Optional[datetime] = None
-    discovered_at: Optional[datetime] = field(default_factory=datetime.utcnow)
+    discovered_at: Optional[datetime] = field(default_factory=lambda: datetime.now(UTC))
     
     def can_combine_with(self, other: 'ItemState') -> bool:
         """Check if this item can be combined with another."""
@@ -114,7 +114,7 @@ class RelationshipState:
                 setattr(self, attr, current + value)
         
         self.interaction_count += 1
-        self.last_interaction = datetime.utcnow()
+        self.last_interaction = datetime.now(UTC)
         
         if memory:
             self.add_memory(memory)
@@ -172,16 +172,16 @@ class AdvancedStateManager:
     
     def __init__(self, session_id: str):
         self.session_id = session_id
-        self.variables: Dict[str, Any] = {}
-        self.inventory: Dict[str, ItemState] = {}
-        self.relationships: Dict[str, RelationshipState] = {}
+        self.variables = {}
+        self.inventory = {}
+        self.relationships = {}
         self.environment = EnvironmentalState()
-        self.change_history: List[StateChange] = []
-        self.context_stack: List[Dict[str, Any]] = []
-        
+        self.change_history = []
+        self.context_stack = []
+
         # Performance optimization: cache frequently accessed computations
-        self._cached_computations: Dict[str, Any] = {}
-        self._cache_expiry: datetime = datetime.utcnow()
+        self._cached_computations = {}
+        self._cache_expiry = datetime.now(UTC)
         
     def set_variable(self, key: str, value: Any, context: Optional[Dict[str, Any]] = None, 
                     storylet_id: Optional[int] = None) -> Any:
@@ -306,7 +306,7 @@ class AdvancedStateManager:
                 new_value = max(-100, min(100, current_value + change_amount))  # Clamp to -100/100
                 setattr(rel, attribute, new_value)
         
-        rel.last_interaction = datetime.utcnow()
+        rel.last_interaction = datetime.now(UTC)
         rel.interaction_count += 1
         
         if memory:
@@ -441,13 +441,13 @@ class AdvancedStateManager:
     def get_contextual_variables(self) -> Dict[str, Any]:
         """Get all variables plus computed contextual information."""
         cache_key = "contextual_vars"
-        if (cache_key in self._cached_computations and 
-            datetime.utcnow() < self._cache_expiry):
+        if (cache_key in self._cached_computations and
+                datetime.now(UTC) < self._cache_expiry):
             return self._cached_computations[cache_key]
-        
+
         # Base variables
-        context = dict(self.variables)
-        
+        context: Dict[str, Any] = dict(self.variables)
+
         # Add computed values
         context['_inventory_count'] = len(self.inventory)
         context['_total_item_quantity'] = sum(item.quantity for item in self.inventory.values())
@@ -455,7 +455,7 @@ class AdvancedStateManager:
         context['_time_of_day'] = self.environment.time_of_day
         context['_weather'] = self.environment.weather
         context['_danger_level'] = self.environment.danger_level
-        
+
         # Add non-underscore versions for compatibility
         context['inventory_count'] = len(self.inventory)
         context['total_item_quantity'] = sum(item.quantity for item in self.inventory.values())
@@ -464,24 +464,24 @@ class AdvancedStateManager:
         context['weather'] = self.environment.weather
         context['danger_level'] = self.environment.danger_level
         context['inventory_items'] = list(self.inventory.keys())
-        context['known_people'] = list(set(rel.entity_a if rel.entity_a != 'player' else rel.entity_b 
-                                          for rel in self.relationships.values()))
-        
+        context['known_people'] = list({rel.entity_a if rel.entity_a != 'player' else rel.entity_b
+                                        for rel in self.relationships.values()})
+
         # Add mood modifiers from environment
         mood_modifiers = self.environment.get_mood_modifier()
         for mood, modifier in mood_modifiers.items():
             context[f'_mood_{mood}'] = modifier
-        
+
         # Cache the result
         self._cached_computations[cache_key] = context
-        self._cache_expiry = datetime.utcnow() + timedelta(seconds=30)
-        
+        self._cache_expiry = datetime.now(UTC) + timedelta(seconds=30)
+
         return context
     
     def _invalidate_cache(self):
         """Clear cached computations when state changes."""
         self._cached_computations.clear()
-        self._cache_expiry = datetime.utcnow()
+        self._cache_expiry = datetime.now(UTC)
     
     def get_state_summary(self) -> Dict[str, Any]:
         """Get a comprehensive summary of current state."""
@@ -520,7 +520,7 @@ class AdvancedStateManager:
                 'total_relationships': len(self.relationships)
             },
             'recent_changes': len([c for c in self.change_history 
-                                 if c.timestamp > datetime.utcnow() - timedelta(minutes=5)])
+                                 if c.timestamp > datetime.now(UTC) - timedelta(minutes=5)])
         }
     
     def export_state(self) -> Dict[str, Any]:
@@ -556,7 +556,10 @@ class AdvancedStateManager:
         # Reconstruct change history
         self.change_history = []
         for change_data in state_data.get('change_history', []):
-            change_data['timestamp'] = datetime.fromisoformat(change_data['timestamp'])
+            parsed_ts = datetime.fromisoformat(change_data['timestamp'])
+            if parsed_ts.tzinfo is None:
+                parsed_ts = parsed_ts.replace(tzinfo=UTC)
+            change_data['timestamp'] = parsed_ts
             change_data['change_type'] = StateChangeType(change_data['change_type'])
             self.change_history.append(StateChange(**change_data))
         

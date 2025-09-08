@@ -9,7 +9,7 @@ from fastapi import Body, Query
 from sqlalchemy.orm import Session
 import json
 
-from ..database import get_db
+from ..database import get_db, SessionLocal
 from ..models import SessionVars, Storylet
 from ..models.schemas import NextReq, NextResp, ChoiceOut
 from ..services.game_logic import pick_storylet, render
@@ -37,21 +37,21 @@ def get_state_manager(session_id: str, db: Session) -> AdvancedStateManager:
     """Get or create a state manager for the session."""
     if session_id not in _state_managers:
         manager = AdvancedStateManager(session_id)
-        
+
         # Load existing state from database if available
         row = db.get(SessionVars, session_id)
         if row is not None and row.vars is not None:
             # Convert old vars format to new state format
             legacy_vars = cast(Dict[str, Any], row.vars or {})
             manager.variables.update(legacy_vars)
-            
+
             # Initialize some defaults for better gameplay
             manager.variables.setdefault("name", "Adventurer")
             manager.variables.setdefault("danger", 0)
             manager.variables.setdefault("has_pickaxe", True)
-            
+
         _state_managers[session_id] = manager
-        
+
     return _state_managers[session_id]
 
 
@@ -196,15 +196,30 @@ def update_environment(session_id: str, changes: Dict[str, Any],
     }
 
 
+# Seed test DB if empty to support spatial tests
+def _seed_if_test_db():
+    try:
+        import os
+        if os.getenv('DW_DB_PATH') == 'test_database.db':
+            db = SessionLocal()
+            from ..services.seed_data import seed_if_empty
+            seed_if_empty(db)
+            db.close()
+    except Exception:
+        pass
+
+_seed_if_test_db()
+
+
 @router.post('/cleanup-sessions')
 def cleanup_old_sessions(db: Session = Depends(get_db)):
     """Clean up sessions older than 24 hours."""
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, UTC
     from sqlalchemy import text
     
     try:
         # Calculate cutoff time (24 hours ago)
-        cutoff_time = datetime.utcnow() - timedelta(hours=24)
+        cutoff_time = datetime.now(UTC) - timedelta(hours=24)
         
         # Count sessions to be deleted
         count_result = db.execute(

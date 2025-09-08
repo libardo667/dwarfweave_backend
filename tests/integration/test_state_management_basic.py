@@ -68,16 +68,14 @@ def test_basic_functionality():
         assert "relationships" in summary       # Using new format  
         assert "environment" in summary
         print("✅ State summary works")
-        
+
         print("\n🎉 ALL BASIC TESTS PASSED! State Management System is working correctly!")
         print("\nKey Findings:")
         print("- Variables accessed via manager.variables[key]")
         print("- Conditions support both exact values and operator dicts")
         print("- Contextual vars have underscore prefixes for computed values")
         print("- State summary has specific key names")
-        
-        return True
-        
+        # No return; asserts above validate behavior
     finally:
         # Always cleanup test database
         cleanup_test_database()

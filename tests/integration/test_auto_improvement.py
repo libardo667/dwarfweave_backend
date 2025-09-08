@@ -31,12 +31,7 @@ def test_author_commit_improvement():
     result = response.json()
     
     print(f"✅ Added {result.get('added', 0)} storylets")
-    if 'auto_improvements' in result:
-        print(f"🤖 {result['auto_improvements']}")
-        return True
-    else:
-        print("❌ No auto-improvements found")
-        return False
+    assert 'auto_improvements' in result, "Expected auto_improvements in response"
 
 def test_world_generation_improvement():
     """Test that auto-improvement runs during world generation."""
@@ -55,12 +50,7 @@ def test_world_generation_improvement():
     result = response.json()
     
     print(f"✅ Generated {result.get('storylets_created', 0)} storylets")
-    if 'auto_improvements' in result:
-        print(f"🤖 {result['auto_improvements']}")
-        return True
-    else:
-        print("❌ No auto-improvements found")
-        return False
+    assert 'auto_improvements' in result, "Expected auto_improvements in world generation response"
 
 def test_populate_improvement():
     """Test that auto-improvement runs during population."""
@@ -69,17 +59,9 @@ def test_populate_improvement():
     response = requests.post(f"{BASE_URL}/author/populate?target_count=3")
     result = response.json()
     
-    if result.get('success'):
-        print(f"✅ Added {result.get('added', 0)} storylets")
-        if 'auto_improvements' in result:
-            print(f"🤖 {result['auto_improvements']}")
-            return True
-        else:
-            print("❌ No auto-improvements found")
-            return False
-    else:
-        print(f"❌ Population failed: {result}")
-        return False
+    assert result.get('success'), f"Population failed: {result}"
+    print(f"✅ Added {result.get('added', 0)} storylets")
+    assert 'auto_improvements' in result, "Expected auto_improvements in population response"
 
 def main():
     """Run all auto-improvement tests."""

@@ -19,7 +19,14 @@ class StoryDeepener:
     """
     
     def __init__(self, db_path: str = 'worldweaver.db'):
-        self.db_path = db_path
+        if db_path and db_path != 'worldweaver.db':
+            self.db_path = db_path
+        else:
+            env_db = os.getenv('DW_DB_PATH')
+            if env_db:
+                self.db_path = env_db
+            else:
+                self.db_path = 'test_database.db' if os.getenv('PYTEST_CURRENT_TEST') else 'worldweaver.db'
         self.storylets = []
         self.choice_transitions = []  # (from_storylet, choice, to_storylet)
         self.weak_transitions = []    # Transitions that need deepening

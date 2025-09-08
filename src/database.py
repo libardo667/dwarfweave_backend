@@ -1,11 +1,21 @@
-"""Database configuration and setup."""
+"""Database configuration and setup.
+
+Respects DW_DB_PATH (absolute or relative sqlite file path). During pytest runs,
+defaults to test_database.db unless DW_DB_PATH is set.
+"""
 
 from typing import Generator
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session, Session
+import os
 
 # Database Setup
-engine = create_engine('sqlite:///worldweaver.db', future=True)
+db_file = os.environ.get("DW_DB_PATH")
+if not db_file:
+    # If running under pytest, prefer the test DB by default
+    db_file = 'test_database.db' if os.environ.get('PYTEST_CURRENT_TEST') else 'worldweaver.db'
+
+engine = create_engine(f'sqlite:///{db_file}', future=True)
 SessionLocal = scoped_session(sessionmaker(bind=engine, autoflush=False, autocommit=False))
 Base = declarative_base()
 

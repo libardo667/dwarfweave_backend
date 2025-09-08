@@ -7,6 +7,7 @@ import os
 import requests
 import json
 from typing import Dict, Any
+import pytest
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -23,21 +24,20 @@ def check_api_setup():
             print("✅ API is running")
         else:
             print("❌ API is not responding correctly")
-            return False
+            pytest.skip("API not responding correctly at /health")
     except requests.exceptions.ConnectionError:
         print("❌ API is not running. Start it with: uvicorn main:app --reload")
-        return False
+        pytest.skip("API is not running on localhost:8000")
     
     # Check OpenAI API key
     api_key = os.getenv("OPENAI_API_KEY")
     if api_key:
         print("✅ OpenAI API key is set")
-        return True
     else:
         print("❌ OpenAI API key is not set")
         print("Set it with: $env:OPENAI_API_KEY='your-key-here' (PowerShell)")
         print("Or create a .env file with: OPENAI_API_KEY=your-key-here")
-        return False
+        pytest.skip("OPENAI_API_KEY not set")
 
 def test_storylet_generation():
     """Test the storylet generation endpoint."""

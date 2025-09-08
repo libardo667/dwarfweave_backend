@@ -28,19 +28,21 @@ def drop_test_tables():
     Base.metadata.drop_all(test_engine)
 
 def reset_test_database():
-    """Reset the test database to a clean state."""
-    if os.path.exists("test_database.db"):
-        os.remove("test_database.db")
-    create_test_tables()
+    """Reset the test database to a clean state without deleting the file."""
+    try:
+        TestSessionLocal.remove()
+    except Exception:
+        pass
+    # Drop and recreate tables to ensure a clean slate
+    Base.metadata.drop_all(test_engine)
+    Base.metadata.create_all(test_engine)
     print("🧪 Test database reset and ready")
 
 def cleanup_test_database():
-    """Clean up test database after tests."""
-    TestSessionLocal.remove()
-    if os.path.exists("test_database.db"):
-        try:
-            os.remove("test_database.db")
-            print("🧹 Test database cleaned up")
-        except PermissionError:
-            # On Windows, sometimes the file is still in use
-            print("⚠️  Database file in use, will be cleaned up later")
+    """Clean up test database after tests (sessions only; file removal handled in conftest)."""
+    try:
+        TestSessionLocal.remove()
+    except Exception:
+        pass
+
+

@@ -2,34 +2,43 @@
 """Test the intelligent AI storylet generation system."""
 
 import requests
+import pytest
 import json
 
 BASE_URL = "http://localhost:8000"
+
+
+def _api_running() -> bool:
+    try:
+        r = requests.get(f"{BASE_URL}/health", timeout=2)
+        return r.status_code == 200
+    except Exception:
+        return False
 
 def test_storylet_analysis():
     """Test the storylet analysis endpoint."""
     print("=== STORYLET ANALYSIS ===")
     try:
-        response = requests.get(f"{BASE_URL}/author/storylet-analysis")
-        if response.status_code == 200:
-            data = response.json()
-            print("Analysis Summary:")
-            summary = data.get("summary", {})
-            print(f"- Total gaps: {summary.get('total_gaps', 0)}")
-            print(f"- Top priority: {summary.get('top_priority', 'None')}")
-            print(f"- Connectivity health: {summary.get('connectivity_health', 0):.1%}")
-            
-            print("\nTop 3 Improvement Priorities:")
-            for i, rec in enumerate(data.get("recommendations", [])[:3], 1):
-                print(f"{i}. {rec.get('suggestion', 'Unknown')}")
-            
-            return data
-        else:
-            print(f"Error: {response.status_code} - {response.text}")
-            return None
+        if not _api_running():
+            pytest.skip("API not running; skipping analysis test")
+        response = requests.get(f"{BASE_URL}/author/storylet-analysis", timeout=10)
+        assert response.status_code == 200, f"Unexpected status: {response.status_code} - {response.text}"
+        data = response.json()
+        print("Analysis Summary:")
+        summary = data.get("summary", {})
+        print(f"- Total gaps: {summary.get('total_gaps', 0)}")
+        print(f"- Top priority: {summary.get('top_priority', 'None')}")
+        print(f"- Connectivity health: {summary.get('connectivity_health', 0):.1%}")
+
+        print("\nTop 3 Improvement Priorities:")
+        for i, rec in enumerate(data.get("recommendations", [])[:3], 1):
+            print(f"{i}. {rec.get('suggestion', 'Unknown')}")
+        # Basic sanity asserts
+        assert isinstance(data, dict)
+        assert "summary" in data
     except Exception as e:
         print(f"Request failed: {e}")
-        return None
+        assert False, f"Analysis request failed: {e}"
 
 def test_intelligent_generation():
     """Test the intelligent storylet generation."""
@@ -40,64 +49,65 @@ def test_intelligent_generation():
             "themes": ["exploration", "mystery"],
             "intelligent": True
         }
-        response = requests.post(f"{BASE_URL}/author/generate-intelligent", 
-                               json=payload)
-        if response.status_code == 200:
-            data = response.json()
-            print(f"Generated {len(data.get('storylets', []))} intelligent storylets:")
-            for i, storylet in enumerate(data.get("storylets", []), 1):
-                print(f"\n{i}. {storylet.get('title', 'Untitled')}")
-                print(f"   Text: {storylet.get('text_template', '')[:100]}...")
-                print(f"   Choices: {len(storylet.get('choices', []))}")
-            return data
-        else:
-            print(f"Error: {response.status_code} - {response.text}")
-            return None
+        if not _api_running():
+            pytest.skip("API not running; skipping intelligent generation test")
+        response = requests.post(f"{BASE_URL}/author/generate-intelligent", json=payload, timeout=15)
+        assert response.status_code == 200, f"Unexpected status: {response.status_code} - {response.text}"
+        data = response.json()
+        print(f"Generated {len(data.get('storylets', []))} intelligent storylets:")
+        for i, storylet in enumerate(data.get("storylets", []), 1):
+            print(f"\n{i}. {storylet.get('title', 'Untitled')}")
+            print(f"   Text: {storylet.get('text_template', '')[:100]}...")
+            print(f"   Choices: {len(storylet.get('choices', []))}")
+        # Sanity asserts
+        assert isinstance(data, dict)
+        assert "storylets" in data
     except Exception as e:
         print(f"Request failed: {e}")
-        return None
+        assert False, f"Intelligent generation failed: {e}"
 
 def test_targeted_generation():
     """Test the targeted storylet generation."""
     print("\n=== TARGETED GENERATION ===")
     try:
-        response = requests.post(f"{BASE_URL}/author/generate-targeted")
-        if response.status_code == 200:
-            data = response.json()
-            if "storylets" in data:
-                print(f"Generated {len(data.get('storylets', []))} targeted storylets:")
-                for i, storylet in enumerate(data.get("storylets", []), 1):
-                    print(f"\n{i}. {storylet.get('title', 'Untitled')}")
-                    print(f"   Text: {storylet.get('text_template', '')[:100]}...")
-            else:
-                print(f"Response: {data.get('message', 'Unknown result')}")
-            return data
+        if not _api_running():
+            pytest.skip("API not running; skipping targeted generation test")
+        response = requests.post(f"{BASE_URL}/author/generate-targeted", timeout=10)
+        assert response.status_code == 200, f"Unexpected status: {response.status_code} - {response.text}"
+        data = response.json()
+        if "storylets" in data:
+            print(f"Generated {len(data.get('storylets', []))} targeted storylets:")
+            for i, storylet in enumerate(data.get("storylets", []), 1):
+                print(f"\n{i}. {storylet.get('title', 'Untitled')}")
+                print(f"   Text: {storylet.get('text_template', '')[:100]}...")
         else:
-            print(f"Error: {response.status_code} - {response.text}")
-            return None
+            print(f"Response: {data.get('message', 'Unknown result')}")
+        # Sanity assert: we got a valid response dict
+        assert isinstance(data, dict)
     except Exception as e:
         print(f"Request failed: {e}")
-        return None
+        assert False, f"Targeted generation failed: {e}"
 
 def test_debug_info():
     """Test the debug endpoint."""
     print("\n=== DEBUG INFO ===")
     try:
-        response = requests.get(f"{BASE_URL}/author/debug")
-        if response.status_code == 200:
-            data = response.json()
-            print(f"Total storylets: {data.get('total_storylets', 0)}")
-            print(f"Available storylets: {data.get('available_storylets', 0)}")
-            print("Sample titles:")
-            for title in data.get("sample_storylet_titles", []):
-                print(f"  - {title}")
-            return data
-        else:
-            print(f"Error: {response.status_code} - {response.text}")
-            return None
+        if not _api_running():
+            pytest.skip("API not running; skipping debug test")
+        response = requests.get(f"{BASE_URL}/author/debug", timeout=5)
+        assert response.status_code == 200, f"Unexpected status: {response.status_code} - {response.text}"
+        data = response.json()
+        print(f"Total storylets: {data.get('total_storylets', 0)}")
+        print(f"Available storylets: {data.get('available_storylets', 0)}")
+        print("Sample titles:")
+        for title in data.get("sample_storylet_titles", []):
+            print(f"  - {title}")
+        # Sanity asserts
+        assert isinstance(data, dict)
+        assert "total_storylets" in data
     except Exception as e:
         print(f"Request failed: {e}")
-        return None
+        assert False, f"Debug info request failed: {e}"
 
 if __name__ == "__main__":
     print("Testing Intelligent AI Storylet Generation System")

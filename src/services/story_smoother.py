@@ -8,6 +8,7 @@ import json
 from collections import defaultdict, deque
 from typing import Dict, List, Set, Tuple, Optional
 import random
+import os
 
 
 class StorySmoother:
@@ -18,7 +19,15 @@ class StorySmoother:
     """
     
     def __init__(self, db_path: str = 'worldweaver.db'):
-        self.db_path = db_path
+        # Prefer explicit arg, else env var, else pick test DB during pytest, else default
+        if db_path and db_path != 'worldweaver.db':
+            self.db_path = db_path
+        else:
+            env_db = os.getenv('DW_DB_PATH')
+            if env_db:
+                self.db_path = env_db
+            else:
+                self.db_path = 'test_database.db' if os.getenv('PYTEST_CURRENT_TEST') else 'worldweaver.db'
         self.storylets = []
         self.locations = set()
         self.location_storylets = defaultdict(list)
