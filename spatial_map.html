@@ -1,0 +1,295 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spatial Storylet Map</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 100%;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .stat {
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .map-container {
+            text-align: center;
+            overflow: auto;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: linear-gradient(45deg, #f8f9fa 25%, transparent 25%), 
+                        linear-gradient(-45deg, #f8f9fa 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, #f8f9fa 75%), 
+                        linear-gradient(-45deg, transparent 75%, #f8f9fa 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        .storylet {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .storylet:hover {
+            transform: scale(1.1);
+        }
+        .storylet-node {
+            fill: #667eea;
+            stroke: #fff;
+            stroke-width: 3;
+        }
+        .storylet-text {
+            fill: white;
+            font-size: 12px;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+        }
+        .connection {
+            stroke: #feca57;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+            opacity: 0.7;
+        }
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 300px;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 20px;
+            margin-bottom: 5px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ Spatial Storylet Map</h1>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">16</div>
+                <div class="stat-label">Total Storylets</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">16</div>
+                <div class="stat-label">Positioned</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">2</div>
+                <div class="stat-label">Connections</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">15×4</div>
+                <div class="stat-label">Grid Size</div>
+            </div>
+        </div>
+        
+        <div class="map-container">
+            <svg width="1920" height="600" id="map-svg">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                            refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#feca57" />
+                    </marker>
+                </defs>
+                
+                <!-- Grid lines -->
+                <defs>
+                    <pattern id="grid" width="120" height="120" patternUnits="userSpaceOnUse">
+                        <path d="M 120 0 L 0 0 0 120" fill="none" stroke="#ddd" stroke-width="1"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" opacity="0.5" />
+                
+                <!-- Connections -->
+        
+                <path class="connection" d="M 180,300 Q 180.0,220.0 180,180"
+                      data-choice="Seek the origins of the echoes (→ Cradle of Echoes)" />
+            
+                <path class="connection" d="M 180,300 Q 180.0,340.0 180,420"
+                      data-choice="Uncover the ruins resonating with ancient power (→ Resonance Ruins)" />
+            
+                <!-- Storylets -->
+                <g class="storylet" data-id="1" data-tooltip="Title: Whisper of the Quantum Grove\nID: 1\nPosition: (1, 0)\nRequires: {'location': 'Quantum Grove'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="300" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="300" y="300" class="storylet-text">Whisper of t...</text>
+                </g>
+            
+                <g class="storylet" data-id="2" data-tooltip="Title: Temporal Nexus Chamber\nID: 2\nPosition: (2, 0)\nRequires: {'location': 'Temporal Nexus'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="420" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="420" y="300" class="storylet-text">Temporal Nex...</text>
+                </g>
+            
+                <g class="storylet" data-id="3" data-tooltip="Title: Library of Temporal Whispers\nID: 3\nPosition: (3, 0)\nRequires: {'location': 'Library of Temporal Whispers'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="540" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="540" y="300" class="storylet-text">Library of T...</text>
+                </g>
+            
+                <g class="storylet" data-id="4" data-tooltip="Title: Echoes from the Abyss\nID: 4\nPosition: (4, 0)\nRequires: {'location': 'Abyss'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="660" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="660" y="300" class="storylet-text">Echoes from ...</text>
+                </g>
+            
+                <g class="storylet" data-id="5" data-tooltip="Title: The Harmonic Convergence\nID: 5\nPosition: (5, 0)\nRequires: {'location': 'Convergence Point'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="780" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="780" y="300" class="storylet-text">The Harmonic...</text>
+                </g>
+            
+                <g class="storylet" data-id="6" data-tooltip="Title: Between Realms\nID: 6\nPosition: (6, 0)\nRequires: {'location': 'Between Realms'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="900" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="900" y="300" class="storylet-text">Between Real...</text>
+                </g>
+            
+                <g class="storylet" data-id="7" data-tooltip="Title: Resonance of the Ancients\nID: 7\nPosition: (0, 1)\nRequires: {'location': 'Resonance Ruins'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="180" cy="420" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="180" y="420" class="storylet-text">Resonance of...</text>
+                </g>
+            
+                <g class="storylet" data-id="8" data-tooltip="Title: Celestial Observatory\nID: 8\nPosition: (7, 0)\nRequires: {'location': 'Celestial Observatory'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="1020" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="1020" y="300" class="storylet-text">Celestial Ob...</text>
+                </g>
+            
+                <g class="storylet" data-id="9" data-tooltip="Title: Echo Chamber of Choices\nID: 9\nPosition: (8, 0)\nRequires: {'location': 'Echo Chamber'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="1140" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="1140" y="300" class="storylet-text">Echo Chamber...</text>
+                </g>
+            
+                <g class="storylet" data-id="10" data-tooltip="Title: Dimensional Rift\nID: 10\nPosition: (9, 0)\nRequires: {'location': 'Dimensional Rift'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="1260" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="1260" y="300" class="storylet-text">Dimensional ...</text>
+                </g>
+            
+                <g class="storylet" data-id="11" data-tooltip="Title: Portal of Lost Eons\nID: 11\nPosition: (10, 0)\nRequires: {'location': 'Portal of Lost Eons'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="1380" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="1380" y="300" class="storylet-text">Portal of Lo...</text>
+                </g>
+            
+                <g class="storylet" data-id="12" data-tooltip="Title: Veil of the Past\nID: 12\nPosition: (11, 0)\nRequires: {'location': 'Veil of the Past'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="1500" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="1500" y="300" class="storylet-text">Veil of the ...</text>
+                </g>
+            
+                <g class="storylet" data-id="13" data-tooltip="Title: Enclave of the Timeless\nID: 13\nPosition: (12, 0)\nRequires: {'location': 'Enclave of the Timeless'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="1620" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="1620" y="300" class="storylet-text">Enclave of t...</text>
+                </g>
+            
+                <g class="storylet" data-id="14" data-tooltip="Title: Cradle of Echoes\nID: 14\nPosition: (0, -1)\nRequires: {'location': 'Cradle of Echoes'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="180" cy="180" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="180" y="180" class="storylet-text">Cradle of Ec...</text>
+                </g>
+            
+                <g class="storylet" data-id="15" data-tooltip="Title: Fractures of Time\nID: 15\nPosition: (13, 0)\nRequires: {'location': 'Fractures of Time'}\nChoices: 2\nWeight: 1.0">
+                    <circle cx="1740" cy="300" r="25" class="storylet-node" fill="#27ae60" />
+                    <text x="1740" y="300" class="storylet-text">Fractures of...</text>
+                </g>
+            
+                <g class="storylet" data-id="16" data-tooltip="Title: Whispers of the Quantum Veil\nID: 16\nPosition: (0, 0)\nRequires: {}\nChoices: 2\nWeight: 2.0">
+                    <circle cx="180" cy="300" r="25" class="storylet-node" fill="#667eea" />
+                    <text x="180" y="300" class="storylet-text">Whispers of ...</text>
+                </g>
+            
+            </svg>
+        </div>
+        
+        <div class="legend">
+            <h3>Legend</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #27ae60;"></div>
+                <span>Location-based storylets</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e74c3c;"></div>
+                <span>Danger-based storylets</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f39c12;"></div>
+                <span>Other requirements</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #667eea;"></div>
+                <span>No requirements</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #feca57;"></div>
+                <span>Choice connections (arrows)</span>
+            </div>
+        </div>
+        
+        <div class="tooltip" id="tooltip"></div>
+    </div>
+    
+    <script>
+        const tooltip = document.getElementById('tooltip');
+        const storylets = document.querySelectorAll('.storylet');
+        
+        storylets.forEach(storylet => {
+            storylet.addEventListener('mouseenter', (e) => {
+                const tooltipText = e.currentTarget.getAttribute('data-tooltip');
+                tooltip.innerHTML = tooltipText.replace(/\n/g, '<br>');
+                tooltip.style.opacity = '1';
+            });
+            
+            storylet.addEventListener('mousemove', (e) => {
+                tooltip.style.left = e.pageX + 10 + 'px';
+                tooltip.style.top = e.pageY + 10 + 'px';
+            });
+            
+            storylet.addEventListener('mouseleave', () => {
+                tooltip.style.opacity = '0';
+            });
+        });
+    </script>
+</body>
+</html>
+        

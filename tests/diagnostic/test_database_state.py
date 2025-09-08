@@ -19,7 +19,7 @@ def test_database_is_empty():
     print("=" * 40)
     
     # Connect to database
-    db_path = project_root / 'dwarfweave.db'
+    db_path = project_root / 'worldweaver.db'
     
     if not db_path.exists():
         print("❌ FAIL: Database file does not exist!")
@@ -62,7 +62,7 @@ def test_database_tables_exist():
     print("\n🧪 Testing: Database tables exist")
     print("=" * 40)
     
-    db_path = project_root / 'dwarfweave.db'
+    db_path = project_root / 'worldweaver.db'
     conn = sqlite3.connect(str(db_path))
     cursor = conn.cursor()
     
@@ -130,7 +130,7 @@ def test_database_can_insert():
     print("\n🧪 Testing: Database accepts writes")
     print("=" * 40)
     
-    db_path = project_root / 'dwarfweave.db'
+    db_path = project_root / 'worldweaver.db'
     conn = sqlite3.connect(str(db_path))
     cursor = conn.cursor()
     

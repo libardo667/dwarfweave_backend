@@ -134,16 +134,12 @@ body {
         <span class="menu-btn secondary" onclick="document.querySelector('a[data-passage=Game]').click()">
             🌌 Enter Existing Reality
         </span>
-        <span class="menu-btn secondary" onclick="document.querySelector('a[data-passage=SpatialGame]').click()">
-            🗺️ Spatial Navigation Demo
-        </span>
     </div>
     
     <!-- Backup Twine links for navigation (hidden but functional) -->
     <div style="display: none;">
         [[Weave a New Reality->WorldBuilder]]
         [[Enter Existing Reality->Game]]
-        [[Spatial Navigation Demo->SpatialGame]]
     </div>
     
     <div class="features">
@@ -496,6 +492,83 @@ body {
     background: rgba(255, 255, 255, 0.3);
     transform: translateY(-1px);
 }
+
+/* Spatial Navigation Compass Styles */
+.spatial-navigation {
+    margin: 20px auto;
+    max-width: 300px;
+}
+
+.nav-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    gap: 4px;
+    width: 100%;
+    height: 240px;
+}
+
+.nav-cell {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    font-size: 0.8em;
+}
+
+.nav-cell:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.05);
+}
+
+.nav-cell.center {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-color: rgba(255, 255, 255, 0.4);
+    cursor: default;
+}
+
+.nav-cell.center:hover {
+    transform: none;
+}
+
+.direction-symbol {
+    font-size: 1.2em;
+    margin-bottom: 2px;
+}
+
+.direction-name {
+    font-size: 0.7em;
+    font-weight: bold;
+    opacity: 0.8;
+}
+
+.current-location {
+    font-size: 0.8em;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 4px;
+}
+
+.location-preview {
+    font-size: 0.6em;
+    text-align: center;
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+.nav-status {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.9em;
+    opacity: 0.8;
+}
 </style>
 
 <div class="game-container">
@@ -567,6 +640,178 @@ body {
 </div>
 
 <script>
+// ========== Spatial Navigation System (Inline) ==========
+window.SpatialNavigation = {
+  sessionId: null,
+  
+  init: function(sessionId) {
+    console.log('🧭 Initializing SpatialNavigation with session:', sessionId);
+    this.sessionId = sessionId || 'default';
+    
+    // Check if elements exist before attaching listeners
+    console.log('🔍 Checking for navigation elements...');
+    const navCells = document.querySelectorAll('.nav-cell[data-direction]');
+    const locationDisplay = document.getElementById('current-location-display');
+    console.log(`📊 Found ${navCells.length} navigation cells`);
+    console.log('📊 Location display element:', locationDisplay);
+    
+    this.attachEventListeners();
+        // Ensure backend session has an initial location, then load nav
+        this.ensureLocation()
+            .then(() => {
+                console.log('✅ ensureLocation completed, loading navigation...');
+                return this.loadNavigation();
+            })
+            .catch(error => {
+                console.warn('⚠️ ensureLocation failed, trying navigation anyway:', error);
+                return this.loadNavigation();
+            });
+  },
+  
+  attachEventListeners: function() {
+    console.log('🔗 Attaching event listeners...');
+    // Add click handlers to navigation cells
+    document.querySelectorAll('.nav-cell[data-direction]').forEach(cell => {
+      cell.addEventListener('click', (e) => {
+        const direction = e.currentTarget.dataset.direction;
+        console.log('👆 Direction clicked:', direction);
+        this.moveInDirection(direction);
+      });
+    });
+    console.log('✅ Event listeners attached to', document.querySelectorAll('.nav-cell[data-direction]').length, 'cells');
+  },
+
+  async ensureLocation() {
+    try {
+        const initialLoc = (typeof State !== 'undefined' && State.variables && State.variables.location)
+            ? State.variables.location : 'start';
+
+        await fetch('http://localhost:8000/api/next', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_id: this.sessionId || 'default',
+                vars: { location: initialLoc }
+            })
+        });
+    } catch (e) {
+        console.warn('ensureLocation failed:', e);
+    }
+  },
+  
+  async loadNavigation() {
+    console.log('📡 Loading navigation data for session:', this.sessionId);
+    this.showStatus('Loading navigation...', 'loading');
+    
+    try {
+      const response = await fetch(`http://localhost:8000/api/spatial/navigation/${this.sessionId}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        console.log('📊 Navigation data received:', data);
+        this.updateNavigationUI(data);
+      } else {
+        console.error('❌ Navigation load failed:', data);
+        this.showStatus('Failed to load navigation: ' + data.error, 'error');
+      }
+    } catch (error) {
+      console.error('🚨 Navigation load error:', error);
+      this.showStatus('Connection error: ' + error.message, 'error');
+    }
+  },
+  
+  updateNavigationUI: function(data) {
+    const directions = data.directions || {};
+    
+    console.log('🗺️ Navigation data received:', data);
+    console.log('🗺️ Current location display element:', document.getElementById('current-location-display'));
+    
+    // Update current location display
+    const locationDisplay = document.getElementById('current-location-display');
+    if (data.current_location && locationDisplay) {
+      locationDisplay.textContent = data.current_location;
+      console.log('✅ Updated location display to:', data.current_location);
+    } else {
+      console.error('❌ Failed to update location display:', { 
+        current_location: data.current_location, 
+        element: locationDisplay 
+      });
+    }
+    
+    // Update each direction cell
+    Object.keys(directions).forEach(direction => {
+      const cell = document.querySelector(`[data-direction="${direction}"]`);
+      const preview = document.getElementById(`nav-${direction}`);
+      
+      if (!cell) return;
+      
+      const target = directions[direction];
+      
+      if (target === null) {
+        // No location in this direction
+        cell.className = 'nav-cell empty';
+        if (preview) preview.textContent = '';
+        cell.style.cursor = 'default';
+        cell.title = 'No path this way';
+      } else if (target.accessible) {
+        // Accessible location
+        cell.className = 'nav-cell accessible';
+        if (preview) preview.textContent = target.title;
+        cell.style.cursor = 'pointer';
+        cell.title = `Go to ${target.title}`;
+      } else {
+        // Blocked location
+        cell.className = 'nav-cell blocked';
+        if (preview) preview.textContent = target.title;
+        cell.style.cursor = 'not-allowed';
+        cell.title = `Cannot access ${target.title}: ${target.reason || 'Requirements not met'}`;
+      }
+    });
+    
+    this.showStatus('Navigation updated', 'success');
+  },
+  
+  async moveInDirection(direction) {
+    this.showStatus(`Moving ${direction}...`, 'loading');
+    
+    try {
+      const response = await fetch(`http://localhost:8000/api/spatial/move/${this.sessionId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ direction: direction })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        console.log('✅ Move successful:', result);
+        // Reload navigation to reflect new position
+        this.loadNavigation();
+        this.showStatus(`Moved ${direction}!`, 'success');
+      } else {
+        console.error('❌ Move failed:', result);
+        this.showStatus(`Cannot move ${direction}: ${result.detail || 'Unknown error'}`, 'error');
+      }
+    } catch (error) {
+      console.error('🚨 Move error:', error);
+      this.showStatus('Connection error: ' + error.message, 'error');
+    }
+  },
+  
+  showStatus: function(message, type = 'info') {
+    const statusEl = document.getElementById('nav-status');
+    if (statusEl) {
+      statusEl.textContent = message;
+      statusEl.className = `nav-status ${type}`;
+    }
+    console.log(`📢 Status: ${message} (${type})`);
+  }
+};
+
+console.log('✅ SpatialNavigation object loaded inline!', window.SpatialNavigation);
+
 // This connects to your existing game logic
 (function() {
     // Start a new game session
@@ -679,17 +924,19 @@ body {
     loadStorylet();
 
     // Initialize spatial navigation within Game using same session
-    setTimeout(function() {
-        // Assign positions, then init
-        fetch('http://localhost:8000/api/spatial/assign-positions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        }).finally(() => {
-            if (window.SpatialNavigation) {
-                window.SpatialNavigation.init(sessionId);
-            }
-        });
-    }, 800);
+    console.log('🚀 About to initialize spatial navigation...');
+    console.log('🔍 SpatialNavigation available:', !!window.SpatialNavigation);
+    
+    // Assign positions, then init (with direct call since it's now inline)
+    fetch('http://localhost:8000/api/spatial/assign-positions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    }).finally(() => {
+        setTimeout(() => {
+            console.log('🧭 Initializing SpatialNavigation with session:', sessionId);
+            window.SpatialNavigation.init(sessionId);
+        }, 1000);
+    });
 })();
 </script>
 
@@ -699,205 +946,11 @@ body {
     [[Go to Start->Start]]
 </div>
 
-:: SpatialGame {"position":"775,350","size":"100,100"}
-<style>
-body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 20px;
-    min-height: 100vh;
-}
-
-.spatial-game-container {
-    max-width: 700px;
-    margin: 0 auto;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.spatial-game-title {
-    text-align: center;
-    font-size: 2.5em;
-    margin-bottom: 20px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.description {
-    text-align: center;
-    font-size: 1.1em;
-    margin-bottom: 30px;
-    line-height: 1.6;
-    opacity: 0.9;
-}
-
-.nav-links {
-    text-align: center;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.nav-btn {
-    display: inline-block;
-    margin: 0 10px;
-    padding: 10px 20px;
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    text-decoration: none;
-    border-radius: 10px;
-    font-weight: bold;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
-
-.nav-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: translateY(-1px);
-}
-</style>
-
-<<set $location to "forest">>
-<<set $sessionId to "spatial_demo_" + Math.floor(Math.random() * 1000000)>>
-
-<div class="spatial-game-container">
-    <h1 class="spatial-game-title">🗺️ Spatial Navigation</h1>
-    
-    <div class="description">
-        <p>🧭 <strong>Navigate through the world using the 8-directional compass!</strong></p>
-        <p>Click on the directional arrows around your player avatar to move through the spatial reality. Green directions are accessible, red are blocked, and empty spaces have no connections.</p>
-    <p><em>Current Location: <span id="current-location-text">forest</span></em></p>
-    </div>
-    
-    <div id="spatial-nav-container">
-        <div class="spatial-navigation">
-            <div class="nav-grid">
-                <!-- Top row -->
-                <div class="nav-cell" data-direction="northwest">
-                    <span class="direction-symbol">↖</span>
-                    <span class="direction-name">NW</span>
-                    <div class="location-preview" id="nav-northwest"></div>
-                </div>
-                <div class="nav-cell" data-direction="north">
-                    <span class="direction-symbol">↑</span>
-                    <span class="direction-name">N</span>
-                    <div class="location-preview" id="nav-north"></div>
-                </div>
-                <div class="nav-cell" data-direction="northeast">
-                    <span class="direction-symbol">↗</span>
-                    <span class="direction-name">NE</span>
-                    <div class="location-preview" id="nav-northeast"></div>
-                </div>
-                
-                <!-- Middle row -->
-                <div class="nav-cell" data-direction="west">
-                    <span class="direction-symbol">←</span>
-                    <span class="direction-name">W</span>
-                    <div class="location-preview" id="nav-west"></div>
-                </div>
-                
-                <!-- Player position (center) -->
-                <div class="nav-cell center player-position">
-                    <div class="player-avatar">🧙‍♂️</div>
-                    <div class="current-location" id="current-location-display">forest</div>
-                </div>
-                
-                <div class="nav-cell" data-direction="east">
-                    <span class="direction-symbol">→</span>
-                    <span class="direction-name">E</span>
-                    <div class="location-preview" id="nav-east"></div>
-                </div>
-                
-                <!-- Bottom row -->
-                <div class="nav-cell" data-direction="southwest">
-                    <span class="direction-symbol">↙</span>
-                    <span class="direction-name">SW</span>
-                    <div class="location-preview" id="nav-southwest"></div>
-                </div>
-                <div class="nav-cell" data-direction="south">
-                    <span class="direction-symbol">↓</span>
-                    <span class="direction-name">S</span>
-                    <div class="location-preview" id="nav-south"></div>
-                </div>
-                <div class="nav-cell" data-direction="southeast">
-                    <span class="direction-symbol">↘</span>
-                    <span class="direction-name">SE</span>
-                    <div class="location-preview" id="nav-southeast"></div>
-                </div>
-            </div>
-            
-            <!-- Status area -->
-            <div class="nav-status" id="nav-status">
-                Ready to explore...
-            </div>
-        </div>
-    </div>
-    
-    <div class="nav-links">
-        <span class="nav-btn" onclick="document.querySelector('a[data-passage=Game]').click()">🎮 Regular Game</span>
-        <span class="nav-btn" onclick="document.querySelector('a[data-passage=WorldBuilder]').click()">✨ Weave New Reality</span>
-        <span class="nav-btn" onclick="document.querySelector('a[data-passage=Start]').click()">🏠 Home</span>
-    </div>
-</div>
-
-<<script>>
-$(document).ready(function() {
-    console.log('🚀 Initializing Spatial Navigation...');
-    
-    // Set up session ID
-    const sessionId = 'spatial_demo_' + Math.floor(Math.random() * 1000000);
-    window.sessionId = sessionId;
-    
-    console.log('🎯 Navigation grid found:', document.querySelector('.nav-grid') ? 'YES' : 'NO');
-    console.log('🎯 Navigation cells found:', document.querySelectorAll('.nav-cell').length);
-    
-    // Initialize spatial navigation system
-    setTimeout(function() {
-        console.log('🔧 Setting up navigation with session:', sessionId);
-        
-        // Assign spatial positions first
-        fetch('http://localhost:8000/api/spatial/assign-positions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
-        }).then(response => {
-            if (response.ok) {
-                return response.json();
-            }
-            throw new Error('Failed to assign positions');
-        }).then(result => {
-            console.log(`📍 Assigned positions to ${result.positions_assigned} storylets`);
-            
-            // Initialize the spatial navigation
-            if (window.SpatialNavigation) {
-                console.log('🧭 Starting SpatialNavigation...');
-                window.SpatialNavigation.init(sessionId);
-            } else {
-                console.error('❌ SpatialNavigation object not found!');
-            }
-        }).catch(error => {
-            console.log('⚠️ Position assignment failed:', error.message);
-            // Still try to initialize navigation
-            if (window.SpatialNavigation) {
-                console.log('🧭 Starting SpatialNavigation (fallback)...');
-                window.SpatialNavigation.init(sessionId);
-            }
-        });
-    }, 1000);
-});
-<</script>>
-
 <!-- Hidden navigation links -->
 <div style="display: none;">
-    [[Go to Game->Game]]
     [[Go to WorldBuilder->WorldBuilder]]
     [[Go to Start->Start]]
-</div>
-
-:: StoryScript [script]
+</div>:: StoryScript [script]
 // Global SugarCube functions available to all passages
 window.goToPassage = function(passageName) {
     Engine.play(passageName);
@@ -914,11 +967,25 @@ window.SpatialNavigation = {
   init: function(sessionId) {
     console.log('🧭 Initializing SpatialNavigation with session:', sessionId);
     this.sessionId = sessionId || 'default';
+    
+    // Check if elements exist before attaching listeners
+    console.log('🔍 Checking for navigation elements...');
+    const navCells = document.querySelectorAll('.nav-cell[data-direction]');
+    const locationDisplay = document.getElementById('current-location-display');
+    console.log(`📊 Found ${navCells.length} navigation cells`);
+    console.log('📊 Location display element:', locationDisplay);
+    
     this.attachEventListeners();
         // Ensure backend session has an initial location, then load nav
         this.ensureLocation()
-            .then(() => this.loadNavigation())
-            .catch(() => this.loadNavigation());
+            .then(() => {
+                console.log('✅ ensureLocation completed, loading navigation...');
+                return this.loadNavigation();
+            })
+            .catch(error => {
+                console.warn('⚠️ ensureLocation failed, trying navigation anyway:', error);
+                return this.loadNavigation();
+            });
   },
   
   attachEventListeners: function() {
@@ -977,6 +1044,21 @@ window.SpatialNavigation = {
   
   updateNavigationUI: function(data) {
     const directions = data.directions || {};
+    
+    console.log('🗺️ Navigation data received:', data);
+    console.log('🗺️ Current location display element:', document.getElementById('current-location-display'));
+    
+    // Update current location display
+    const locationDisplay = document.getElementById('current-location-display');
+    if (data.current_location && locationDisplay) {
+      locationDisplay.textContent = data.current_location;
+      console.log('✅ Updated location display to:', data.current_location);
+    } else {
+      console.error('❌ Failed to update location display:', { 
+        current_location: data.current_location, 
+        element: locationDisplay 
+      });
+    }
     
     // Update each direction cell
     Object.keys(directions).forEach(direction => {
@@ -1087,6 +1169,8 @@ window.SpatialNavigation = {
     }
   }
 };
+
+console.log('✅ SpatialNavigation object loaded!', window.SpatialNavigation);
 
 // Auto-initialize spatial navigation when DOM changes
 function initSpatialNavigation() {

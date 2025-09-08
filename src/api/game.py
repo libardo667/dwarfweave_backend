@@ -259,6 +259,28 @@ def get_spatial_navigation(session_id: str, db: Session = Depends(get_db)):
         
         # Get current storylet ID
         current_location = state_manager.get_variable("location", "start")
+        logging.info(f"📍 Current location: {current_location}")
+        
+        # If location is 'start' or invalid, set to first available location  
+        available_storylets = db.query(Storylet).filter(
+            Storylet.requires.isnot(None)
+        ).all()
+        
+        valid_locations = set()
+        for s in available_storylets:
+            try:
+                req = s.requires if isinstance(s.requires, dict) else json.loads(s.requires)
+                if 'location' in req:
+                    valid_locations.add(req['location'])
+            except:
+                pass
+                
+        if current_location not in valid_locations and valid_locations:
+            new_location = sorted(valid_locations)[0]  # Use first alphabetically
+            logging.info(f"🔄 Invalid location '{current_location}', setting to '{new_location}'")
+            state_manager.set_variable("location", new_location)
+            save_state_to_db(state_manager, db)
+            current_location = new_location
         
         # Get current storylet by location
         current_storylet = db.query(Storylet).filter(
@@ -266,7 +288,8 @@ def get_spatial_navigation(session_id: str, db: Session = Depends(get_db)):
         ).first()
         
         if not current_storylet:
-            return {"error": "Current location not found", "directions": {}}
+            logging.error(f"❌ No storylet found for location '{current_location}' even after fallback")
+            return {"error": "Current location not found", "directions": {}, "current_location": current_location}
         
         # Get the actual ID value from the SQLAlchemy model
         current_id = cast(int, current_storylet.id)
@@ -319,6 +342,8 @@ def move_in_direction(
 ):
     """Move the player in a specific direction."""
     try:
+        logging.info(f"🎯 Move request: session={session_id}, payload={payload}, direction={direction}")
+        
         state_manager = get_state_manager(session_id, db)
         spatial_nav = get_spatial_navigator(db)
         
@@ -327,25 +352,47 @@ def move_in_direction(
             direction = payload.get('direction')
         
         if direction is None:
+            logging.error("❌ No direction provided")
             raise HTTPException(status_code=400, detail="Missing 'direction'")
         
         if direction not in DIRECTIONS:
+            logging.error(f"❌ Invalid direction: {direction}")
             raise HTTPException(status_code=400, detail=f"Invalid direction: {direction}")
         
-        # Get current storylet
+        # Get current storylet - try multiple approaches
         current_location = state_manager.get_variable("location", "start")
+        logging.info(f"📍 Current location: {current_location}")
+        
+        # First try: exact location match
         current_storylet = db.query(Storylet).filter(
             Storylet.requires.contains(f'"location": "{current_location}"')
         ).first()
         
+        # Second try: any storylet if we can't find location-based ones
         if not current_storylet:
-            raise HTTPException(status_code=404, detail="Current location not found")
+            logging.warning(f"❌ No storylet found for location '{current_location}', trying any positioned storylet")
+            positioned_ids = list(spatial_nav.storylet_positions.keys())
+            if positioned_ids:
+                current_storylet = db.query(Storylet).filter(Storylet.id.in_(positioned_ids)).first()
+                if current_storylet:
+                    # Update the session to match this storylet's location
+                    requires = cast(Dict[str, Any], current_storylet.requires or {})
+                    fallback_location = requires.get('location', 'unknown')
+                    state_manager.set_variable("location", fallback_location)
+                    save_state_to_db(state_manager, db)
+                    logging.info(f"🔄 Using fallback storylet {current_storylet.id} at location '{fallback_location}'")
+        
+        if not current_storylet:
+            logging.error(f"❌ No positioned storylets found")
+            raise HTTPException(status_code=404, detail="No positioned storylets found")
         
         current_id = cast(int, current_storylet.id)
+        logging.info(f"🎯 Current storylet: {current_id} ({current_storylet.title})")
         
         # Check if movement is allowed
         player_vars = state_manager.get_contextual_variables()
         if not spatial_nav.can_move_to_direction(current_id, direction, player_vars):
+            logging.warning(f"⛔ Movement blocked: {direction}")
             raise HTTPException(status_code=403, detail="Cannot move in that direction")
         
         # Get target storylet
@@ -353,6 +400,7 @@ def move_in_direction(
         target = nav_options.get(direction)
         
         if not target:
+            logging.error(f"❌ No location in direction: {direction}")
             raise HTTPException(status_code=404, detail="No location in that direction")
         
         # Update player location
@@ -363,6 +411,7 @@ def move_in_direction(
             if new_location:
                 state_manager.set_variable("location", new_location)
                 save_state_to_db(state_manager, db)
+                logging.info(f"✅ Moved to: {new_location}")
         
         return {
             "success": True,

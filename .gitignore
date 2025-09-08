@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # DwarfWeave specific files
-dwarfweave.db
+worldweaver.db
 *.db
 *.sqlite
 *.sqlite3
