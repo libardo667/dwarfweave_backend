@@ -4,6 +4,8 @@ import logging
 import traceback
 from typing import Any, Dict, List, cast
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from fastapi import Body, Query
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -304,14 +306,29 @@ def get_spatial_navigation(session_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Navigation failed: {str(e)}")
 
 
+class _MoveReq(BaseModel):
+    direction: str
+
+
 @router.post('/spatial/move/{session_id}')
-def move_in_direction(session_id: str, direction: str, db: Session = Depends(get_db)):
+def move_in_direction(
+    session_id: str,
+    payload: dict | None = Body(default=None),
+    direction: str | None = Query(default=None),
+    db: Session = Depends(get_db)
+):
     """Move the player in a specific direction."""
     try:
         state_manager = get_state_manager(session_id, db)
         spatial_nav = get_spatial_navigator(db)
         
-        # Validate direction
+        # Validate direction from either JSON or query
+        if direction is None and payload is not None:
+            direction = payload.get('direction')
+        
+        if direction is None:
+            raise HTTPException(status_code=400, detail="Missing 'direction'")
+        
         if direction not in DIRECTIONS:
             raise HTTPException(status_code=400, detail=f"Invalid direction: {direction}")
         

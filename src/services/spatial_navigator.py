@@ -105,44 +105,78 @@ class SpatialNavigator:
         self.storylet_positions.clear()
         self.position_storylets.clear()
         
-        # Get storylet IDs
-        storylet_map = {}
+        # Build title -> id map
+        storylet_map: Dict[str, int] = {}
         cursor = self.db.execute(text("SELECT id, title FROM storylets"))
         for row in cursor.fetchall():
-            storylet_map[row[1]] = row[0]  # title -> id mapping
-        
+            storylet_map[row[1]] = row[0]
+
         if not storylets:
             return {}
-        
-        # Start with the first storylet at origin
-        starting_storylet = storylets[0]
-        starting_id = storylet_map.get(starting_storylet['title'])
-        if not starting_id:
-            return {}
-        
-        # Use a spiral placement algorithm to avoid overlaps
-        positioned = set()
-        to_position = [(starting_id, start_pos)]
-        
-        while to_position:
-            storylet_id, pos = to_position.pop(0)
-            
-            if storylet_id in positioned:
+
+        # Index storylets by required location
+        location_index: Dict[str, List[int]] = {}
+        id_list: List[int] = []
+        for s in storylets:
+            sid = storylet_map.get(s.get('title', ''))
+            if not sid:
                 continue
-            
-            # Find a free position near the suggested position
+            id_list.append(sid)
+            req = s.get('requires') or {}
+            req_loc = req.get('location')
+            if isinstance(req_loc, str):
+                location_index.setdefault(req_loc, []).append(sid)
+
+        # Build adjacency graph using both 'set' and legacy 'set_vars'
+        adjacency: Dict[int, List[int]] = {sid: [] for sid in id_list}
+        degree: Dict[int, int] = {sid: 0 for sid in id_list}
+        for s in storylets:
+            sid = storylet_map.get(s.get('title', ''))
+            if not sid:
+                continue
+            for choice in (s.get('choices') or []):
+                set_obj = choice.get('set') or choice.get('set_vars') or {}
+                target_loc = set_obj.get('location')
+                if isinstance(target_loc, str):
+                    for tid in location_index.get(target_loc, []):
+                        if tid not in adjacency[sid]:
+                            adjacency[sid].append(tid)
+                            degree[sid] += 1
+
+        # Choose a starting node: prefer one with highest degree, fallback to first
+        starting_id: Optional[int] = None
+        if degree:
+            starting_id = max(degree.keys(), key=lambda k: degree[k])
+        if starting_id is None and id_list:
+            starting_id = id_list[0]
+        if starting_id is None:
+            return {}
+
+        # BFS/spiral placement across the graph
+        positioned: set[int] = set()
+        to_position: List[Tuple[int, Position]] = [(starting_id, start_pos)]
+
+        while to_position:
+            node_id, pos = to_position.pop(0)
+            if node_id in positioned:
+                continue
+
             final_pos = self._find_free_position(pos)
-            self._place_storylet(storylet_id, final_pos)
-            positioned.add(storylet_id)
-            
-            # Find connected storylets and suggest positions for them
-            connected = self._get_connected_storylets(storylet_id, storylets, storylet_map)
-            for connected_id in connected:
-                if connected_id not in positioned:
-                    # Suggest a position in a spiral around the current position
-                    suggested_pos = self._suggest_nearby_position(final_pos)
-                    to_position.append((connected_id, suggested_pos))
-        
+            self._place_storylet(node_id, final_pos)
+            positioned.add(node_id)
+
+            # Enqueue neighbors
+            for neighbor_id in adjacency.get(node_id, []):
+                if neighbor_id not in positioned:
+                    to_position.append((neighbor_id, self._suggest_nearby_position(final_pos)))
+
+        # Place any remaining disconnected nodes in a spiral around start
+        for sid in id_list:
+            if sid not in positioned:
+                start_pos = self._find_free_position(start_pos)
+                self._place_storylet(sid, start_pos)
+                positioned.add(sid)
+
         return self.storylet_positions
     
     def _find_free_position(self, preferred_pos: Position) -> Position:
@@ -203,7 +237,8 @@ class SpatialNavigator:
         
         # Check choices for location changes
         for choice in storylet_data.get('choices', []):
-            choice_set = choice.get('set', {})
+            # Support both normalized 'set' and legacy 'set_vars' keys
+            choice_set = choice.get('set') or choice.get('set_vars') or {}
             if 'location' in choice_set:
                 target_location = choice_set['location']
                 

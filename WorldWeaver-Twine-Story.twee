@@ -504,6 +504,60 @@ body {
     <div id="game-content">
         <p style="text-align: center;"><span class="spinner">�</span> Weaving your reality threads...</p>
     </div>
+
+    <!-- Inline Spatial Compass (uses same session as Game) -->
+    <div style="margin-top: 24px; text-align: center; opacity: 0.9;">
+        <div style="font-weight: 600; margin-bottom: 8px;">🧭 Spatial Compass</div>
+        <div class="spatial-navigation">
+            <div class="nav-grid" id="nav-grid-in-game">
+                <div class="nav-cell" data-direction="northwest">
+                    <span class="direction-symbol">↖</span>
+                    <span class="direction-name">NW</span>
+                    <div class="location-preview" id="nav-northwest"></div>
+                </div>
+                <div class="nav-cell" data-direction="north">
+                    <span class="direction-symbol">↑</span>
+                    <span class="direction-name">N</span>
+                    <div class="location-preview" id="nav-north"></div>
+                </div>
+                <div class="nav-cell" data-direction="northeast">
+                    <span class="direction-symbol">↗</span>
+                    <span class="direction-name">NE</span>
+                    <div class="location-preview" id="nav-northeast"></div>
+                </div>
+                <div class="nav-cell" data-direction="west">
+                    <span class="direction-symbol">←</span>
+                    <span class="direction-name">W</span>
+                    <div class="location-preview" id="nav-west"></div>
+                </div>
+                <div class="nav-cell center player-position">
+                    <div class="player-avatar">🧙‍♂️</div>
+                    <div class="current-location" id="current-location-display">(loading)</div>
+                </div>
+                <div class="nav-cell" data-direction="east">
+                    <span class="direction-symbol">→</span>
+                    <span class="direction-name">E</span>
+                    <div class="location-preview" id="nav-east"></div>
+                </div>
+                <div class="nav-cell" data-direction="southwest">
+                    <span class="direction-symbol">↙</span>
+                    <span class="direction-name">SW</span>
+                    <div class="location-preview" id="nav-southwest"></div>
+                </div>
+                <div class="nav-cell" data-direction="south">
+                    <span class="direction-symbol">↓</span>
+                    <span class="direction-name">S</span>
+                    <div class="location-preview" id="nav-south"></div>
+                </div>
+                <div class="nav-cell" data-direction="southeast">
+                    <span class="direction-symbol">↘</span>
+                    <span class="direction-name">SE</span>
+                    <div class="location-preview" id="nav-southeast"></div>
+                </div>
+            </div>
+            <div class="nav-status" id="nav-status">Ready to explore...</div>
+        </div>
+    </div>
     
     <div class="nav-links">
         <span class="nav-btn" onclick="document.querySelector('a[data-passage=WorldBuilder]').click()">✨ Weave New Reality</span>
@@ -517,6 +571,9 @@ body {
 (function() {
     // Start a new game session
     const sessionId = 'twine-session-' + Math.random().toString(36).substr(2, 9);
+    // Expose session to both SugarCube and window for SpatialNavigation
+    try { if (typeof State !== 'undefined') { State.variables.sessionId = sessionId; } } catch(e) {}
+    window.twineSessionId = sessionId;
     
     async function loadStorylet() {
         try {
@@ -526,7 +583,8 @@ body {
                 body: JSON.stringify({
                     session_id: sessionId,
                     vars: {
-                        location: "start",
+                        // Let backend/story decide; include location if already set
+                        location: (typeof State !== 'undefined' && State.variables && State.variables.location) ? State.variables.location : undefined,
                         player_role: "adventurer"
                     }
                 })
@@ -619,6 +677,19 @@ body {
     
     // Load the first storylet
     loadStorylet();
+
+    // Initialize spatial navigation within Game using same session
+    setTimeout(function() {
+        // Assign positions, then init
+        fetch('http://localhost:8000/api/spatial/assign-positions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }).finally(() => {
+            if (window.SpatialNavigation) {
+                window.SpatialNavigation.init(sessionId);
+            }
+        });
+    }, 800);
 })();
 </script>
 
@@ -690,7 +761,7 @@ body {
 }
 </style>
 
-<<set $location to "start">>
+<<set $location to "forest">>
 <<set $sessionId to "spatial_demo_" + Math.floor(Math.random() * 1000000)>>
 
 <div class="spatial-game-container">
@@ -699,7 +770,7 @@ body {
     <div class="description">
         <p>🧭 <strong>Navigate through the world using the 8-directional compass!</strong></p>
         <p>Click on the directional arrows around your player avatar to move through the spatial reality. Green directions are accessible, red are blocked, and empty spaces have no connections.</p>
-        <p><em>Current Location: <span id="current-location-text">start</span></em></p>
+    <p><em>Current Location: <span id="current-location-text">forest</span></em></p>
     </div>
     
     <div id="spatial-nav-container">
@@ -732,7 +803,7 @@ body {
                 <!-- Player position (center) -->
                 <div class="nav-cell center player-position">
                     <div class="player-avatar">🧙‍♂️</div>
-                    <div class="current-location" id="current-location-display">start</div>
+                    <div class="current-location" id="current-location-display">forest</div>
                 </div>
                 
                 <div class="nav-cell" data-direction="east">
@@ -844,7 +915,10 @@ window.SpatialNavigation = {
     console.log('🧭 Initializing SpatialNavigation with session:', sessionId);
     this.sessionId = sessionId || 'default';
     this.attachEventListeners();
-    this.loadNavigation();
+        // Ensure backend session has an initial location, then load nav
+        this.ensureLocation()
+            .then(() => this.loadNavigation())
+            .catch(() => this.loadNavigation());
   },
   
   attachEventListeners: function() {
@@ -859,6 +933,26 @@ window.SpatialNavigation = {
     });
     console.log('✅ Event listeners attached to', document.querySelectorAll('.nav-cell[data-direction]').length, 'cells');
   },
+
+    // Ensure the backend session has a starting location
+    async ensureLocation() {
+        try {
+            const initialLoc = (typeof State !== 'undefined' && State.variables && State.variables.location)
+                ? State.variables.location
+                : 'forest';
+
+            await fetch('http://localhost:8000/api/next', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: this.sessionId || 'default',
+                    vars: { location: initialLoc }
+                })
+            });
+        } catch (e) {
+            console.warn('ensureLocation failed:', e);
+        }
+    },
   
   async loadNavigation() {
     console.log('📡 Loading navigation data for session:', this.sessionId);
@@ -1671,15 +1765,20 @@ $(document).on(':passagestart', function(ev) {
 
 /* Debug: Make sure grid is visible */
 .nav-grid {
-  display: grid !important;
-  grid-template-columns: repeat(3, 100px) !important;
-  grid-template-rows: repeat(3, 100px) !important;
-  gap: 4px;
-  width: 312px;
-  height: 312px;
+    display: grid !important;
+    grid-template-columns: repeat(3, 100px) !important;
+    grid-template-rows: repeat(3, 100px) !important;
+    grid-template-areas:
+        "nw n ne"
+        "w  c e"
+        "sw s se" !important;
+    gap: 8px; /* keep gap consistent with padding to avoid overflow */
+    /* Let content define size to prevent overflow/overlap */
+    width: max-content;
+    height: max-content;
   background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
   border-radius: 15px;
-  padding: 8px;
+    padding: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   margin: 0 auto;
   border: 2px solid #444; /* Debug border */
@@ -1696,8 +1795,9 @@ $(document).on(':passagestart', function(ev) {
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
-  width: 100px;
-  height: 100px;
+    /* Fill the grid cell instead of forcing fixed px to avoid layout glitches */
+    width: 100%;
+    height: 100%;
   color: #fff;
   font-size: 0.8em;
 }
@@ -1761,6 +1861,7 @@ $(document).on(':passagestart', function(ev) {
   border-color: #667eea;
   cursor: default;
   box-shadow: 0 0 15px rgba(102, 126, 234, 0.4);
+    grid-area: c;
 }
 
 .nav-cell.center:hover {
@@ -1881,3 +1982,13 @@ $(document).on(':passagestart', function(ev) {
     font-size: 1.5em;
   }
 }
+
+/* Explicit grid-area mapping for each direction */
+.nav-cell[data-direction="northwest"] { grid-area: nw; }
+.nav-cell[data-direction="north"]     { grid-area: n;  }
+.nav-cell[data-direction="northeast"] { grid-area: ne; }
+.nav-cell[data-direction="west"]      { grid-area: w;  }
+.nav-cell[data-direction="east"]      { grid-area: e;  }
+.nav-cell[data-direction="southwest"] { grid-area: sw; }
+.nav-cell[data-direction="south"]     { grid-area: s;  }
+.nav-cell[data-direction="southeast"] { grid-area: se; }
