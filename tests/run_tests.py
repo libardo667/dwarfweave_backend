@@ -62,9 +62,11 @@ def run_integration_tests():
     print("=" * 60)
     
     integration_tests = [
-        ("tests/integration/system_summary.py", "System Status Summary"),
         ("tests/integration/test_state_management_basic.py", "State Management - Basic Functions"),
         ("tests/integration/test_state_management_advanced.py", "State Management - Advanced Scenarios"),
+        ("tests/integration/test_phase1_final_validation.py", "State Management - Final Validation"),
+        ("tests/integration/test_ai_setup.py", "AI Integration Setup"),
+        ("tests/integration/test_auto_improvement.py", "Auto Improvement System"),
     ]
     
     results = []

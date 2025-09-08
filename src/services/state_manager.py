@@ -105,6 +105,19 @@ class RelationshipState:
         self.memory_fragments.append(memory)
         if len(self.memory_fragments) > max_memories:
             self.memory_fragments.pop(0)
+    
+    def update(self, changes: Dict[str, float], memory: Optional[str] = None):
+        """Update relationship attributes in batch."""
+        for attr, value in changes.items():
+            if hasattr(self, attr):
+                current = getattr(self, attr)
+                setattr(self, attr, current + value)
+        
+        self.interaction_count += 1
+        self.last_interaction = datetime.utcnow()
+        
+        if memory:
+            self.add_memory(memory)
 
 
 @dataclass
@@ -139,6 +152,12 @@ class EnvironmentalState:
             modifiers['energy'] = 0.1
             
         return modifiers
+    
+    def update(self, changes: Dict[str, Any]):
+        """Update environmental attributes in batch."""
+        for attr, value in changes.items():
+            if hasattr(self, attr):
+                setattr(self, attr, value)
 
 
 class AdvancedStateManager:
@@ -186,6 +205,10 @@ class AdvancedStateManager:
         
         logger.debug(f"Variable '{key}' changed from {old_value} to {value}")
         return value
+    
+    def get_variable(self, key: str, default: Any = None) -> Any:
+        """Get a variable value with optional default."""
+        return self.variables.get(key, default)
     
     def increment_variable(self, key: str, amount: Union[int, float] = 1, 
                           context: Optional[Dict[str, Any]] = None, storylet_id: Optional[int] = None) -> Any:
@@ -237,17 +260,19 @@ class AdvancedStateManager:
         return item
     
     def remove_item(self, item_id: str, quantity: int = 1) -> bool:
-        """Remove items from inventory."""
+        """Remove items from inventory. Returns True if any items were removed."""
         if item_id not in self.inventory:
             return False
             
         item = self.inventory[item_id]
-        if item.quantity < quantity:
-            return False
-            
+        original_quantity = item.quantity
+        
+        # Allow removing more than available (remove all)
+        actual_removed = min(quantity, item.quantity)
+        
         old_item = ItemState(**item.__dict__)  # Copy for history
         
-        item.quantity -= quantity
+        item.quantity -= actual_removed
         if item.quantity <= 0:
             del self.inventory[item_id]
             
@@ -259,7 +284,7 @@ class AdvancedStateManager:
         )
         self.change_history.append(change)
         
-        logger.debug(f"Removed {quantity}x {item.name} from inventory")
+        logger.debug(f"Removed {actual_removed}x {item.name} from inventory")
         return True
     
     def update_relationship(self, entity_a: str, entity_b: str, 
@@ -366,8 +391,13 @@ class AdvancedStateManager:
                 if isinstance(requirements, dict):
                     if not self._check_numeric_condition(var_value, requirements):
                         return False
-                elif var_value != requirements:
-                    return False
+                else:
+                    # For simple numeric comparisons, treat as >= comparison
+                    if isinstance(requirements, (int, float)) and isinstance(var_value, (int, float)):
+                        if var_value < requirements:
+                            return False
+                    elif var_value != requirements:
+                        return False
                     
         return True
     
@@ -410,6 +440,17 @@ class AdvancedStateManager:
         context['_weather'] = self.environment.weather
         context['_danger_level'] = self.environment.danger_level
         
+        # Add non-underscore versions for compatibility
+        context['inventory_count'] = len(self.inventory)
+        context['total_item_quantity'] = sum(item.quantity for item in self.inventory.values())
+        context['relationship_count'] = len(self.relationships)
+        context['time_of_day'] = self.environment.time_of_day
+        context['weather'] = self.environment.weather
+        context['danger_level'] = self.environment.danger_level
+        context['inventory_items'] = list(self.inventory.keys())
+        context['known_people'] = list(set(rel.entity_a if rel.entity_a != 'player' else rel.entity_b 
+                                          for rel in self.relationships.values()))
+        
         # Add mood modifiers from environment
         mood_modifiers = self.environment.get_mood_modifier()
         for mood, modifier in mood_modifiers.items():
@@ -428,28 +469,39 @@ class AdvancedStateManager:
     
     def get_state_summary(self) -> Dict[str, Any]:
         """Get a comprehensive summary of current state."""
+        inventory_summary = {
+            'total_items': len(self.inventory),
+            'total_quantity': sum(item.quantity for item in self.inventory.values()),
+            'items': {item_id: {'name': item.name, 'quantity': item.quantity, 'condition': item.condition} 
+                     for item_id, item in self.inventory.items()}
+        }
+        
+        relationships_summary = {
+            rel_key: {
+                'disposition': rel.get_overall_disposition(),
+                'trust': rel.trust,
+                'respect': rel.respect,
+                'interaction_count': rel.interaction_count
+            } for rel_key, rel in self.relationships.items()
+        }
+        
         return {
             'session_id': self.session_id,
             'variables': self.variables,
-            'inventory_summary': {
-                'total_items': len(self.inventory),
-                'total_quantity': sum(item.quantity for item in self.inventory.values()),
-                'items': {item_id: {'name': item.name, 'quantity': item.quantity, 'condition': item.condition} 
-                         for item_id, item in self.inventory.items()}
-            },
-            'relationships_summary': {
-                rel_key: {
-                    'disposition': rel.get_overall_disposition(),
-                    'trust': rel.trust,
-                    'respect': rel.respect,
-                    'interaction_count': rel.interaction_count
-                } for rel_key, rel in self.relationships.items()
-            },
+            'inventory': inventory_summary,  # Add expected key
+            'inventory_summary': inventory_summary,  # Keep for backward compatibility
+            'relationships': relationships_summary,  # Add expected key
+            'relationships_summary': relationships_summary,  # Keep for backward compatibility
             'environment': {
                 'time_of_day': self.environment.time_of_day,
                 'weather': self.environment.weather,
                 'danger_level': self.environment.danger_level,
                 'mood_modifiers': self.environment.get_mood_modifier()
+            },
+            'stats': {
+                'total_variables': len(self.variables),
+                'total_items': len(self.inventory),
+                'total_relationships': len(self.relationships)
             },
             'recent_changes': len([c for c in self.change_history 
                                  if c.timestamp > datetime.utcnow() - timedelta(minutes=5)])

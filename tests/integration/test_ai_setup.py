@@ -99,12 +99,13 @@ def get_stats():
     print("\n📊 Current storylet statistics...")
     
     try:
-        response = requests.get("http://localhost:8000/author/stats")
+        response = requests.get("http://localhost:8000/author/debug")
         
         if response.status_code == 200:
             data = response.json()
             print(f"📚 Total storylets: {data['total_storylets']}")
-            print(f"🔑 API Status: {data['recommendation']}")
+            print(f"� Available storylets: {data['available_storylets']}")
+            print(f"🔑 API Status: Working properly")
         else:
             print(f"❌ Error: {response.status_code}")
             
