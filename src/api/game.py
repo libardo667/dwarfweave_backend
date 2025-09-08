@@ -1,4 +1,4 @@
-"""Main game API routes with Advanced State Management."""
+"""Main game API routes with Advanced State Management and Spatial Navigation."""
 
 import logging
 import traceback
@@ -11,11 +11,23 @@ from ..models import SessionVars, Storylet
 from ..models.schemas import NextReq, NextResp, ChoiceOut
 from ..services.game_logic import pick_storylet, render
 from ..services.state_manager import AdvancedStateManager
+from ..services.spatial_navigator import SpatialNavigator, DIRECTIONS
 
 router = APIRouter()
 
-# Cache for state managers (in production, use Redis or similar)
+# Cache for state managers and spatial navigators (in production, use Redis or similar)
 _state_managers: Dict[str, AdvancedStateManager] = {}
+_spatial_navigators: Dict[str, SpatialNavigator] = {}
+
+
+def get_spatial_navigator(db: Session) -> SpatialNavigator:
+    """Get or create a spatial navigator."""
+    # Use a single navigator per database connection
+    db_key = str(id(db))
+    if db_key not in _spatial_navigators:
+        # Pass the SQLAlchemy session directly
+        _spatial_navigators[db_key] = SpatialNavigator(db)
+    return _spatial_navigators[db_key]
 
 
 def get_state_manager(session_id: str, db: Session) -> AdvancedStateManager:
@@ -234,3 +246,171 @@ def cleanup_old_sessions(db: Session = Depends(get_db)):
         db.rollback()
         logging.error(f"❌ Session cleanup failed: {e}")
         raise HTTPException(status_code=500, detail=f"Session cleanup failed: {str(e)}")
+
+
+@router.get('/spatial/navigation/{session_id}')
+def get_spatial_navigation(session_id: str, db: Session = Depends(get_db)):
+    """Get 8-directional navigation options from current location."""
+    try:
+        state_manager = get_state_manager(session_id, db)
+        spatial_nav = get_spatial_navigator(db)
+        
+        # Get current storylet ID
+        current_location = state_manager.get_variable("location", "start")
+        
+        # Get current storylet by location
+        current_storylet = db.query(Storylet).filter(
+            Storylet.requires.contains(f'"location": "{current_location}"')
+        ).first()
+        
+        if not current_storylet:
+            return {"error": "Current location not found", "directions": {}}
+        
+        # Get the actual ID value from the SQLAlchemy model
+        current_id = cast(int, current_storylet.id)
+        
+        # Get directional navigation options
+        directions = spatial_nav.get_directional_navigation(current_id)
+        
+        # Filter by player requirements
+        player_vars = state_manager.get_contextual_variables()
+        available_directions = {}
+        
+        for direction, target in directions.items():
+            if target is None:
+                available_directions[direction] = None
+            else:
+                can_access = spatial_nav.can_move_to_direction(
+                    current_id, direction, player_vars
+                )
+                available_directions[direction] = {
+                    **target,
+                    "accessible": can_access,
+                    "reason": "Requirements not met" if not can_access else None
+                }
+        
+        return {
+            "current_location": current_location,
+            "current_storylet": {
+                "id": current_id,
+                "title": current_storylet.title,
+                "position": spatial_nav.storylet_positions.get(current_id)
+            },
+            "directions": available_directions
+        }
+        
+    except Exception as e:
+        logging.error(f"❌ Spatial navigation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Navigation failed: {str(e)}")
+
+
+@router.post('/spatial/move/{session_id}')
+def move_in_direction(session_id: str, direction: str, db: Session = Depends(get_db)):
+    """Move the player in a specific direction."""
+    try:
+        state_manager = get_state_manager(session_id, db)
+        spatial_nav = get_spatial_navigator(db)
+        
+        # Validate direction
+        if direction not in DIRECTIONS:
+            raise HTTPException(status_code=400, detail=f"Invalid direction: {direction}")
+        
+        # Get current storylet
+        current_location = state_manager.get_variable("location", "start")
+        current_storylet = db.query(Storylet).filter(
+            Storylet.requires.contains(f'"location": "{current_location}"')
+        ).first()
+        
+        if not current_storylet:
+            raise HTTPException(status_code=404, detail="Current location not found")
+        
+        current_id = cast(int, current_storylet.id)
+        
+        # Check if movement is allowed
+        player_vars = state_manager.get_contextual_variables()
+        if not spatial_nav.can_move_to_direction(current_id, direction, player_vars):
+            raise HTTPException(status_code=403, detail="Cannot move in that direction")
+        
+        # Get target storylet
+        nav_options = spatial_nav.get_directional_navigation(current_id)
+        target = nav_options.get(direction)
+        
+        if not target:
+            raise HTTPException(status_code=404, detail="No location in that direction")
+        
+        # Update player location
+        target_storylet = db.get(Storylet, target['id'])
+        if target_storylet is not None and target_storylet.requires is not None:
+            requirements = cast(Dict[str, Any], target_storylet.requires)
+            new_location = requirements.get('location')
+            if new_location:
+                state_manager.set_variable("location", new_location)
+                save_state_to_db(state_manager, db)
+        
+        return {
+            "success": True,
+            "direction": direction,
+            "new_location": target['title'],
+            "message": f"Moved {direction} to {target['title']}"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"❌ Movement failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Movement failed: {str(e)}")
+
+
+@router.get('/spatial/map')
+def get_spatial_map(db: Session = Depends(get_db)):
+    """Get the full spatial map data for rendering."""
+    try:
+        spatial_nav = get_spatial_navigator(db)
+        map_data = spatial_nav.get_spatial_map_data()
+        
+        return {
+            "map": map_data,
+            "center": {"x": 0, "y": 0},  # Could be player position
+            "directions": {
+                name: {"symbol": direction.symbol, "dx": direction.dx, "dy": direction.dy}
+                for name, direction in DIRECTIONS.items()
+            }
+        }
+        
+    except Exception as e:
+        logging.error(f"❌ Map generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Map generation failed: {str(e)}")
+
+
+@router.post('/spatial/assign-positions')
+def assign_spatial_positions(db: Session = Depends(get_db)):
+    """Assign spatial positions to all storylets (useful after world generation)."""
+    try:
+        spatial_nav = get_spatial_navigator(db)
+        
+        # Get all storylets
+        storylets = db.query(Storylet).all()
+        storylet_data = []
+        
+        for s in storylets:
+            storylet_data.append({
+                'title': s.title,
+                'choices': cast(List[Dict[str, Any]], s.choices or []),
+                'requires': cast(Dict[str, Any], s.requires or {})
+            })
+        
+        # Assign spatial positions
+        positions = spatial_nav.assign_spatial_positions(storylet_data)
+        
+        return {
+            "success": True,
+            "positions_assigned": len(positions),
+            "positions": {
+                str(storylet_id): {"x": pos.x, "y": pos.y}
+                for storylet_id, pos in positions.items()
+            }
+        }
+        
+    except Exception as e:
+        logging.error(f"❌ Position assignment failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Position assignment failed: {str(e)}")

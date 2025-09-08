@@ -177,12 +177,32 @@ class StoryDeepener:
             client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             
             response = client.chat.completions.create(
-                model="gpt-5-2025-08-07",
+                model="gpt-4o",
                 messages=[{"role": "user", "content": prompt}],
-                max_completion_tokens=500
+                temperature=0.7,
+                max_tokens=500
             )
             
             content = response.choices[0].message.content
+            print(f"🔍 DEBUG Bridge: Raw response length: {len(content) if content else 0}")
+            print(f"🔍 DEBUG Bridge: Full response: {content}")
+            
+            # Extract JSON from markdown code blocks if present
+            if content and "```json" in content:
+                json_start = content.find("```json") + 7  # Skip "```json"
+                json_end = content.find("```", json_start)
+                if json_end != -1:
+                    content = content[json_start:json_end].strip()
+            elif content and content.strip().startswith("```"):
+                # Handle cases where it's just ``` without json
+                lines = content.strip().split('\n')
+                if len(lines) > 2 and lines[0].startswith("```") and lines[-1].strip() == "```":
+                    content = '\n'.join(lines[1:-1])  # Remove first and last lines
+            
+            # Clean up any remaining whitespace
+            if content:
+                content = content.strip()
+            
             return content if content is not None else '{"title": "Generated Content", "text": "Content generated."}'
         except Exception as e:
             print(f"⚠️  LLM call failed: {e}")
@@ -231,7 +251,8 @@ class StoryDeepener:
         2. Provides meaningful information or consequence
         3. Feels like a natural continuation
         
-        Return JSON with: title, text
+        Return ONLY valid JSON (no markdown, no explanations):
+        {{"title": "Response Title", "text": "Response text here"}}
         """
         
         try:
@@ -288,7 +309,8 @@ class StoryDeepener:
         Create a 1-2 sentence bridge that smoothly connects A to B.
         The bridge should show the immediate result of the choice before leading to Scene B.
         
-        Return JSON with: title, text
+        Return ONLY valid JSON (no markdown, no explanations):
+        {{"title": "Bridge Title", "text": "Bridge text here"}}
         """
         
         try:

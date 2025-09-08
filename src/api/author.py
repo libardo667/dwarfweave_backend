@@ -442,6 +442,15 @@ def generate_world_from_description(
         
         db.commit()
         
+        # Assign spatial positions to the generated storylets
+        from ..services.spatial_navigator import SpatialNavigator
+        try:
+            spatial_nav = SpatialNavigator(db.connection())
+            positions = spatial_nav.assign_spatial_positions(created_storylets)
+            print(f"📍 Assigned spatial positions to {len(positions)} storylets")
+        except Exception as e:
+            print(f"⚠️ Warning: Could not assign spatial positions: {e}")
+        
         print(f"🌍 Generated world with {len(generated_locations)} locations: {', '.join(generated_locations)}")
         print(f"🎭 Identified themes: {', '.join(generated_themes)}")
         

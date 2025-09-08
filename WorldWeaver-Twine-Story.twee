@@ -134,12 +134,16 @@ body {
         <span class="menu-btn secondary" onclick="document.querySelector('a[data-passage=Game]').click()">
             🌌 Enter Existing Reality
         </span>
+        <span class="menu-btn secondary" onclick="document.querySelector('a[data-passage=SpatialGame]').click()">
+            🗺️ Spatial Navigation Demo
+        </span>
     </div>
     
     <!-- Backup Twine links for navigation (hidden but functional) -->
     <div style="display: none;">
         [[Weave a New Reality->WorldBuilder]]
         [[Enter Existing Reality->Game]]
+        [[Spatial Navigation Demo->SpatialGame]]
     </div>
     
     <div class="features">
@@ -624,6 +628,204 @@ body {
     [[Go to Start->Start]]
 </div>
 
+:: SpatialGame {"position":"775,350","size":"100,100"}
+<style>
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+.spatial-game-container {
+    max-width: 700px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.spatial-game-title {
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.description {
+    text-align: center;
+    font-size: 1.1em;
+    margin-bottom: 30px;
+    line-height: 1.6;
+    opacity: 0.9;
+}
+
+.nav-links {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-btn {
+    display: inline-block;
+    margin: 0 10px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+</style>
+
+<<set $location to "start">>
+<<set $sessionId to "spatial_demo_" + Math.floor(Math.random() * 1000000)>>
+
+<div class="spatial-game-container">
+    <h1 class="spatial-game-title">🗺️ Spatial Navigation</h1>
+    
+    <div class="description">
+        <p>🧭 <strong>Navigate through the world using the 8-directional compass!</strong></p>
+        <p>Click on the directional arrows around your player avatar to move through the spatial reality. Green directions are accessible, red are blocked, and empty spaces have no connections.</p>
+        <p><em>Current Location: <span id="current-location-text">start</span></em></p>
+    </div>
+    
+    <div id="spatial-nav-container">
+        <div class="spatial-navigation">
+            <div class="nav-grid">
+                <!-- Top row -->
+                <div class="nav-cell" data-direction="northwest">
+                    <span class="direction-symbol">↖</span>
+                    <span class="direction-name">NW</span>
+                    <div class="location-preview" id="nav-northwest"></div>
+                </div>
+                <div class="nav-cell" data-direction="north">
+                    <span class="direction-symbol">↑</span>
+                    <span class="direction-name">N</span>
+                    <div class="location-preview" id="nav-north"></div>
+                </div>
+                <div class="nav-cell" data-direction="northeast">
+                    <span class="direction-symbol">↗</span>
+                    <span class="direction-name">NE</span>
+                    <div class="location-preview" id="nav-northeast"></div>
+                </div>
+                
+                <!-- Middle row -->
+                <div class="nav-cell" data-direction="west">
+                    <span class="direction-symbol">←</span>
+                    <span class="direction-name">W</span>
+                    <div class="location-preview" id="nav-west"></div>
+                </div>
+                
+                <!-- Player position (center) -->
+                <div class="nav-cell center player-position">
+                    <div class="player-avatar">🧙‍♂️</div>
+                    <div class="current-location" id="current-location-display">start</div>
+                </div>
+                
+                <div class="nav-cell" data-direction="east">
+                    <span class="direction-symbol">→</span>
+                    <span class="direction-name">E</span>
+                    <div class="location-preview" id="nav-east"></div>
+                </div>
+                
+                <!-- Bottom row -->
+                <div class="nav-cell" data-direction="southwest">
+                    <span class="direction-symbol">↙</span>
+                    <span class="direction-name">SW</span>
+                    <div class="location-preview" id="nav-southwest"></div>
+                </div>
+                <div class="nav-cell" data-direction="south">
+                    <span class="direction-symbol">↓</span>
+                    <span class="direction-name">S</span>
+                    <div class="location-preview" id="nav-south"></div>
+                </div>
+                <div class="nav-cell" data-direction="southeast">
+                    <span class="direction-symbol">↘</span>
+                    <span class="direction-name">SE</span>
+                    <div class="location-preview" id="nav-southeast"></div>
+                </div>
+            </div>
+            
+            <!-- Status area -->
+            <div class="nav-status" id="nav-status">
+                Ready to explore...
+            </div>
+        </div>
+    </div>
+    
+    <div class="nav-links">
+        <span class="nav-btn" onclick="document.querySelector('a[data-passage=Game]').click()">🎮 Regular Game</span>
+        <span class="nav-btn" onclick="document.querySelector('a[data-passage=WorldBuilder]').click()">✨ Weave New Reality</span>
+        <span class="nav-btn" onclick="document.querySelector('a[data-passage=Start]').click()">🏠 Home</span>
+    </div>
+</div>
+
+<<script>>
+$(document).ready(function() {
+    console.log('🚀 Initializing Spatial Navigation...');
+    
+    // Set up session ID
+    const sessionId = 'spatial_demo_' + Math.floor(Math.random() * 1000000);
+    window.sessionId = sessionId;
+    
+    console.log('🎯 Navigation grid found:', document.querySelector('.nav-grid') ? 'YES' : 'NO');
+    console.log('🎯 Navigation cells found:', document.querySelectorAll('.nav-cell').length);
+    
+    // Initialize spatial navigation system
+    setTimeout(function() {
+        console.log('🔧 Setting up navigation with session:', sessionId);
+        
+        // Assign spatial positions first
+        fetch('http://localhost:8000/api/spatial/assign-positions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        }).then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('Failed to assign positions');
+        }).then(result => {
+            console.log(`📍 Assigned positions to ${result.positions_assigned} storylets`);
+            
+            // Initialize the spatial navigation
+            if (window.SpatialNavigation) {
+                console.log('🧭 Starting SpatialNavigation...');
+                window.SpatialNavigation.init(sessionId);
+            } else {
+                console.error('❌ SpatialNavigation object not found!');
+            }
+        }).catch(error => {
+            console.log('⚠️ Position assignment failed:', error.message);
+            // Still try to initialize navigation
+            if (window.SpatialNavigation) {
+                console.log('🧭 Starting SpatialNavigation (fallback)...');
+                window.SpatialNavigation.init(sessionId);
+            }
+        });
+    }, 1000);
+});
+<</script>>
+
+<!-- Hidden navigation links -->
+<div style="display: none;">
+    [[Go to Game->Game]]
+    [[Go to WorldBuilder->WorldBuilder]]
+    [[Go to Start->Start]]
+</div>
+
 :: StoryScript [script]
 // Global SugarCube functions available to all passages
 window.goToPassage = function(passageName) {
@@ -634,7 +836,177 @@ window.restartStory = function() {
     Engine.restart();
 };
 
-// ========== WorldWeaver Enhanced Features ==========
+// ========== Spatial Navigation System ==========
+window.SpatialNavigation = {
+  sessionId: null,
+  
+  init: function(sessionId) {
+    console.log('🧭 Initializing SpatialNavigation with session:', sessionId);
+    this.sessionId = sessionId || 'default';
+    this.attachEventListeners();
+    this.loadNavigation();
+  },
+  
+  attachEventListeners: function() {
+    console.log('🔗 Attaching event listeners...');
+    // Add click handlers to navigation cells
+    document.querySelectorAll('.nav-cell[data-direction]').forEach(cell => {
+      cell.addEventListener('click', (e) => {
+        const direction = e.currentTarget.dataset.direction;
+        console.log('👆 Direction clicked:', direction);
+        this.moveInDirection(direction);
+      });
+    });
+    console.log('✅ Event listeners attached to', document.querySelectorAll('.nav-cell[data-direction]').length, 'cells');
+  },
+  
+  async loadNavigation() {
+    console.log('📡 Loading navigation data for session:', this.sessionId);
+    this.showStatus('Loading navigation...', 'loading');
+    
+    try {
+      const response = await fetch(`http://localhost:8000/api/spatial/navigation/${this.sessionId}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        console.log('📊 Navigation data received:', data);
+        this.updateNavigationUI(data);
+      } else {
+        console.error('❌ Navigation load failed:', data);
+        this.showStatus('Failed to load navigation: ' + data.error, 'error');
+      }
+    } catch (error) {
+      console.error('🚨 Navigation load error:', error);
+      this.showStatus('Connection error: ' + error.message, 'error');
+    }
+  },
+  
+  updateNavigationUI: function(data) {
+    const directions = data.directions || {};
+    
+    // Update each direction cell
+    Object.keys(directions).forEach(direction => {
+      const cell = document.querySelector(`[data-direction="${direction}"]`);
+      const preview = document.getElementById(`nav-${direction}`);
+      
+      if (!cell || !preview) return;
+      
+      const target = directions[direction];
+      
+      if (target === null) {
+        // No location in this direction
+        cell.className = 'nav-cell empty';
+        preview.textContent = '';
+        cell.style.cursor = 'default';
+        cell.title = 'No path this way';
+      } else if (target.accessible) {
+        // Accessible location
+        cell.className = 'nav-cell accessible';
+        preview.textContent = target.title;
+        cell.style.cursor = 'pointer';
+        cell.title = `Go to ${target.title}`;
+      } else {
+        // Blocked location
+        cell.className = 'nav-cell blocked';
+        preview.textContent = target.title;
+        cell.style.cursor = 'not-allowed';
+        cell.title = `Cannot access ${target.title}: ${target.reason || 'Requirements not met'}`;
+      }
+    });
+    
+    this.showStatus('Navigation updated', 'success');
+  },
+  
+  async moveInDirection(direction) {
+    this.showStatus(`Moving ${direction}...`, 'loading');
+    
+    try {
+      const response = await fetch(`http://localhost:8000/api/spatial/move/${this.sessionId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ direction: direction })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        this.showStatus(`Moved ${direction} to ${result.new_location}`, 'success');
+        
+        // Update Twine variables using proper Twine method
+        try {
+          if (typeof variables === 'function') {
+            variables().location = result.new_location;
+          }
+        } catch (e) {
+          console.log('Could not update Twine variable:', e);
+        }
+        
+        // Track the movement in WorldWeaver analytics
+        if (typeof WorldWeaver !== 'undefined' && WorldWeaver.analytics) {
+          WorldWeaver.analytics.trackChoice(`Move ${direction}`, `Spatial Navigation to ${result.new_location}`);
+        }
+        
+        // Reload navigation after move
+        setTimeout(() => {
+          this.loadNavigation();
+        }, 500);
+        
+        // Optionally trigger a new storylet fetch
+        if (window.makeChoice) {
+          // Simulate a choice that sets the new location
+          setTimeout(() => {
+            window.currentVars = { ...window.currentVars, location: result.new_location };
+            // Trigger a storylet refresh
+            if (document.getElementById('game-content')) {
+              document.getElementById('game-content').innerHTML = '<p><span class="spinner">🌀</span> Reality shifting to new location...</p>';
+              // Reload the storylet for the new location
+              if (window.loadStorylet) {
+                setTimeout(window.loadStorylet, 1000);
+              }
+            }
+          }, 1000);
+        }
+        
+      } else {
+        this.showStatus(`Cannot move ${direction}: ${result.detail}`, 'error');
+      }
+    } catch (error) {
+      this.showStatus(`Movement failed: ${error.message}`, 'error');
+    }
+  },
+  
+  showStatus: function(message, type = 'info') {
+    const statusEl = document.getElementById('nav-status');
+    if (statusEl) {
+      statusEl.textContent = message;
+      statusEl.className = `nav-status ${type}`;
+      
+      // Auto-clear status after 3 seconds for non-error messages
+      if (type !== 'error') {
+        setTimeout(() => {
+          statusEl.textContent = 'Ready to explore...';
+          statusEl.className = 'nav-status';
+        }, 3000);
+      }
+    }
+  }
+};
+
+// Auto-initialize spatial navigation when DOM changes
+function initSpatialNavigation() {
+  // Initialize with session ID if available
+  const sessionId = (typeof State !== 'undefined' && State.variables && State.variables.sessionId) 
+                   ? State.variables.sessionId 
+                   : window.sessionId || 'default';
+  
+  if (window.SpatialNavigation) {
+    window.SpatialNavigation.init(sessionId);
+  }
+}
+
+// ========== WorldWeaver Enhanced Features ========== (keeping existing code)
 
 // Progress Tracking System
 window.WorldWeaver = {
@@ -1288,4 +1660,224 @@ $(document).on(':passagestart', function(ev) {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* ========== Spatial Navigation Styles ========== */
+.spatial-navigation {
+  max-width: 400px;
+  margin: 20px auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Debug: Make sure grid is visible */
+.nav-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, 100px) !important;
+  grid-template-rows: repeat(3, 100px) !important;
+  gap: 4px;
+  width: 312px;
+  height: 312px;
+  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-radius: 15px;
+  padding: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  margin: 0 auto;
+  border: 2px solid #444; /* Debug border */
+}
+
+.nav-cell {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  width: 100px;
+  height: 100px;
+  color: #fff;
+  font-size: 0.8em;
+}
+
+.nav-cell:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.nav-cell.accessible {
+  background: rgba(76, 175, 80, 0.4);
+  border-color: #4caf50;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+}
+
+.nav-cell.accessible:hover {
+  background: rgba(76, 175, 80, 0.6);
+  border-color: #66bb6a;
+  transform: translateY(-3px);
+  box-shadow: 0 7px 20px rgba(76, 175, 80, 0.4);
+}
+
+.nav-cell.blocked {
+  background: rgba(244, 67, 54, 0.3);
+  border-color: #f44336;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.nav-cell.empty {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  cursor: default;
+  opacity: 0.4;
+}
+
+.nav-cell.accessible:hover {
+  background: rgba(76, 175, 80, 0.5);
+  border-color: #66bb6a;
+}
+
+.nav-cell.blocked {
+  background: rgba(244, 67, 54, 0.2);
+  border-color: #f44336;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.nav-cell.empty {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  cursor: default;
+  opacity: 0.3;
+}
+
+.nav-cell.center {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  cursor: default;
+  box-shadow: 0 0 15px rgba(102, 126, 234, 0.4);
+}
+
+.nav-cell.center:hover {
+  transform: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.direction-symbol {
+  font-size: 2em;
+  font-weight: bold;
+  margin-bottom: 2px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  line-height: 1;
+}
+
+.direction-name {
+  font-size: 0.7em;
+  opacity: 0.9;
+  font-weight: bold;
+  margin-bottom: 2px;
+  line-height: 1;
+}
+
+.location-preview {
+  font-size: 0.6em;
+  text-align: center;
+  margin-top: 2px;
+  opacity: 0.9;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+
+.player-avatar {
+  font-size: 2.5em;
+  margin-bottom: 2px;
+  animation: pulse 2s infinite;
+  line-height: 1;
+}
+
+.current-location {
+  font-size: 0.6em;
+  text-align: center;
+  font-weight: bold;
+  color: #fff;
+  line-height: 1;
+}
+
+.nav-status {
+  margin-top: 15px;
+  text-align: center;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  font-size: 0.9em;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.nav-status.loading {
+  background: rgba(255, 193, 7, 0.3);
+  border-color: #ffc107;
+  color: #fff;
+}
+
+.nav-status.success {
+  background: rgba(76, 175, 80, 0.3);
+  border-color: #4caf50;
+  color: #fff;
+}
+
+.nav-status.error {
+  background: rgba(244, 67, 54, 0.3);
+  border-color: #f44336;
+  color: #fff;
+}
+
+.nav-status.success {
+  background: rgba(46, 204, 113, 0.3);
+  border: 1px solid #2ecc71;
+}
+
+.nav-status.error {
+  background: rgba(231, 76, 60, 0.3);
+  border: 1px solid #e74c3c;
+}
+
+.nav-status.loading {
+  background: rgba(52, 152, 219, 0.3);
+  border: 1px solid #3498db;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .nav-grid {
+    padding: 10px;
+    gap: 6px;
+  }
+  
+  .nav-cell {
+    min-height: 60px;
+  }
+  
+  .direction-symbol {
+    font-size: 1.2em;
+  }
+  
+  .player-avatar {
+    font-size: 1.5em;
+  }
 }

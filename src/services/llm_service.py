@@ -126,13 +126,14 @@ def llm_suggest_storylets(n: int, themes: List[str], bible: Dict[str, Any]) -> L
     }
 
     response = client.chat.completions.create(
-        model=os.getenv("MODEL", "gpt-5-2025-08-07"),
+        model=os.getenv("MODEL", "gpt-4o"),
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": json.dumps(user_prompt, indent=2)},
         ],
-        max_completion_tokens=2500,  # Allow for more detailed responses
+        temperature=0.7,
+        max_tokens=2500,  # Allow for more detailed responses
     )
     
     data = json.loads(response.choices[0].message.content or "{}")
@@ -339,21 +340,27 @@ Return EXACTLY {count} storylets in this JSON format:
 Focus on creating an interconnected web of storylets where choices in one storylet unlock or influence others. Make the world feel alive and responsive to player choices."""
 
         response = client.chat.completions.create(
-            model=os.getenv("MODEL", "gpt-5-2025-08-07"),
+            model=os.getenv("MODEL", "gpt-4o"),
             messages=[
                 {"role": "system", "content": "You are an expert interactive fiction world builder. Create interconnected storylets that form a cohesive narrative ecosystem."},
                 {"role": "user", "content": world_prompt}
             ],
-            max_completion_tokens=4000
+            temperature=0.8,  # More creative for world building
+            max_tokens=4000
         )
         
         response_text = (response.choices[0].message.content or "").strip()
+        
+        # Debug: Print the raw response to understand what's happening
+        print(f"🔍 DEBUG: Raw response length: {len(response_text)}")
+        print(f"🔍 DEBUG: Full response: {response_text}")
         
         # Extract JSON from response
         json_start = response_text.find('[')
         json_end = response_text.rfind(']') + 1
         
         if json_start == -1 or json_end == 0:
+            print(f"❌ No JSON array brackets found in response")
             raise ValueError("No JSON array found in response")
         
         json_text = response_text[json_start:json_end]
@@ -468,21 +475,28 @@ Return EXACTLY this JSON format:
 Make this feel like a natural, immersive beginning to THIS specific world, not a generic adventure start."""
 
         response = client.chat.completions.create(
-            model=os.getenv("MODEL", "gpt-5-2025-08-07"),
+            model=os.getenv("MODEL", "gpt-4o"),
             messages=[
                 {"role": "system", "content": "You are an expert at creating immersive, world-specific story openings that perfectly match the generated content."},
                 {"role": "user", "content": starting_prompt}
             ],
-            max_completion_tokens=800
+            temperature=0.7,
+            max_tokens=800
         )
         
         response_text = (response.choices[0].message.content or "").strip()
+        
+        # Debug: Print the raw response to understand what's happening
+        print(f"🔍 DEBUG Starting Storylet: Raw response length: {len(response_text)}")
+        print(f"🔍 DEBUG Starting Storylet: Full response: {response_text}")
         
         # Extract JSON from response
         json_start = response_text.find('{')
         json_end = response_text.rfind('}') + 1
         
         if json_start == -1 or json_end == 0:
+            print(f"❌ No JSON object brackets found in starting storylet response")
+            raise ValueError("No JSON found in starting storylet response")
             raise ValueError("No JSON found in starting storylet response")
         
         json_text = response_text[json_start:json_end]
