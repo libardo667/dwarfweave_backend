@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, func
 from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session, Session
 
 # Database Setup
-engine = create_engine('sqlite:///dwarfweave.db', future=True)
+engine = create_engine('sqlite:///worldweaver.db', future=True)
 SessionLocal = scoped_session(sessionmaker(bind=engine, autoflush=False, autocommit=False))
 Base = declarative_base()
 

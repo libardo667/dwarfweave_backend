@@ -1,4 +1,4 @@
-# DwarfWeave Test Suite
+# WorldWeaver Test Suite
 
 ## Test Structure
 

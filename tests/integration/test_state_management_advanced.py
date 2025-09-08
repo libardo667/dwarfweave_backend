@@ -8,44 +8,44 @@ from src.services.state_manager import AdvancedStateManager
 
 def test_advanced_scenarios():
     """Test advanced gameplay scenarios using the state management system."""
-    print("🚀 Testing Advanced DwarfWeave Scenarios...")
+    print("🚀 Testing Advanced WorldWeaver Scenarios...")
     
     manager = AdvancedStateManager("thorin_ironbeard_session")
     
     # === SCENARIO 1: Character Setup ===
     print("\n📋 Setting up character...")
-    manager.set_variable("player_name", "Thorin Ironbeard")
-    manager.set_variable("gold", 200)
-    manager.set_variable("level", 8)
-    manager.set_variable("clan", "Ironforge")
-    manager.set_variable("location", "mountain_depths")
+    manager.set_variable("player_name", "Zara Starweaver")
+    manager.set_variable("energy", 200)
+    manager.set_variable("resonance_level", 8)
+    manager.set_variable("affiliation", "Cosmic_Observatory")
+    manager.set_variable("location", "stellar_nexus")
     
     # Add starting gear
-    manager.add_item("ancestral_pickaxe", "Ancestral Pickaxe", 1, {
-        "damage": 15, "durability": 0.9, "magical": True, "family_heirloom": True
+    manager.add_item("quantum_crystal", "Quantum Resonance Crystal", 1, {
+        "power": 15, "stability": 0.9, "dimensional": True, "ancient_artifact": True
     })
-    manager.add_item("lantern", "Dwarven Lantern", 1, {"light_radius": 8, "fuel": 0.7})
-    manager.add_item("rope", "Sturdy Rope", 3, {"length": 50})
-    manager.add_item("gold_nugget", "Gold Nuggets", 12, {"value": 10})
+    manager.add_item("star_compass", "Stellar Navigation Compass", 1, {"range": 8, "charge": 0.7})
+    manager.add_item("reality_anchor", "Reality Anchor Cord", 3, {"strength": 50})
+    manager.add_item("stardust", "Crystallized Stardust", 12, {"value": 10})
     
     print(f"✅ Character created: {manager.variables['player_name']}")
-    print(f"   Gold: {manager.variables['gold']}, Level: {manager.variables['level']}")
+    print(f"   Energy: {manager.variables['energy']}, Resonance: {manager.variables['resonance_level']}")
     print(f"   Inventory: {len(manager.inventory)} items")
     
     # === SCENARIO 2: Meeting NPCs and Building Relationships ===
     print("\n🤝 Building relationships...")
     
-    # Meet the mine overseer
-    overseer_rel = manager.update_relationship("player", "mine_overseer", {"trust": 0.3, "respect": 0.6})
-    overseer_rel.add_memory("First meeting - proved mining skills")
+    # Meet the observatory keeper
+    keeper_rel = manager.update_relationship("player", "observatory_keeper", {"trust": 0.3, "respect": 0.6})
+    keeper_rel.add_memory("First meeting - demonstrated quantum manipulation")
     
-    # Meet a rival miner  
-    rival_rel = manager.update_relationship("player", "greedy_miner", {"trust": -0.2, "respect": 0.1})
-    rival_rel.add_memory("Caught trying to steal gems")
+    # Meet a rival reality-shaper  
+    rival_rel = manager.update_relationship("player", "shadow_weaver", {"trust": -0.2, "respect": 0.1})
+    rival_rel.add_memory("Caught distorting local reality without permission")
     
-    # Meet an elder
-    elder_rel = manager.update_relationship("player", "clan_elder", {"trust": 0.8, "respect": 0.9})
-    elder_rel.add_memory("Shared stories of the old days")
+    # Meet an ancient being
+    ancient_rel = manager.update_relationship("player", "void_sage", {"trust": 0.8, "respect": 0.9})
+    ancient_rel.add_memory("Shared knowledge of dimensional harmonics")
     
     print("✅ Relationships established:")
     for rel_key, rel in manager.relationships.items():
@@ -54,10 +54,10 @@ def test_advanced_scenarios():
     # === SCENARIO 3: Environmental Challenge ===
     print("\n🌩️ Environmental challenge...")
     manager.update_environment({
-        "time_of_day": "night",
-        "weather": "stormy", 
+        "time_of_day": "cosmic_night",
+        "weather": "reality_storm", 
         "danger_level": 6,
-        "lighting": "dim"
+        "lighting": "quantum_flux"
     })
     
     context = manager.get_contextual_variables()
@@ -68,50 +68,50 @@ def test_advanced_scenarios():
     # === SCENARIO 4: Complex Condition Testing ===
     print("\n🎯 Testing complex conditions...")
     
-    # Test: Can attempt dangerous mining expedition?
+    # Test: Can attempt dangerous reality manipulation?
     expedition_conditions = {
-        "gold": {"gte": 150},           # Need supplies money
-        "level": {"gte": 5},            # Need experience
+        "energy": {"gte": 150},           # Need power reserves
+        "resonance_level": {"gte": 5},    # Need experience
     }
     can_expedition = manager.evaluate_condition(expedition_conditions)
     print(f"✅ Can attempt expedition: {can_expedition}")
     
     # Test: Relationship-based conditions (using new format)
-    elder_conditions = {
-        "relationship:player:clan_elder": {"trust": {"gte": 0.7}, "respect": {"gte": 0.8}}
+    sage_conditions = {
+        "relationship:player:void_sage": {"trust": {"gte": 0.7}, "respect": {"gte": 0.8}}
     }
-    can_seek_wisdom = manager.evaluate_condition(elder_conditions)
-    print(f"✅ Can seek elder's wisdom: {can_seek_wisdom}")
+    can_seek_wisdom = manager.evaluate_condition(sage_conditions)
+    print(f"✅ Can seek sage's wisdom: {can_seek_wisdom}")
     
     # Test: Item-based conditions  
-    mining_conditions = {
-        "item:ancestral_pickaxe": {"quantity": {"gte": 1}}
+    reality_conditions = {
+        "item:quantum_crystal": {"quantity": {"gte": 1}}
     }
-    can_mine_deep = manager.evaluate_condition(mining_conditions)
-    print(f"✅ Can mine deep veins: {can_mine_deep}")
+    can_manipulate_reality = manager.evaluate_condition(reality_conditions)
+    print(f"✅ Can manipulate reality: {can_manipulate_reality}")
     
     # === SCENARIO 5: Dynamic Story Events ===
     print("\n📖 Simulating story events...")
     
-    # Event: Found rare gem in dangerous area
-    if can_expedition and can_mine_deep:
+    # Event: Found rare energy source in dangerous area
+    if can_expedition and can_manipulate_reality:
         print("🔮 STORY EVENT: Found Ancient Crystal!")
-        manager.add_item("ancient_crystal", "Ancient Crystal", 1, {
-            "value": 1000, "magical": True, "rarity": "legendary"
+        manager.add_item("void_essence", "Crystallized Void Essence", 1, {
+            "value": 1000, "dimensional": True, "rarity": "legendary"
         })
-        manager.set_variable("gold", manager.variables["gold"] + 100)
-        overseer_rel = manager.update_relationship("player", "mine_overseer", {"respect": 0.2})
-        overseer_rel.add_memory("Discovered the legendary crystal vein")
+        manager.set_variable("energy", manager.variables["energy"] + 100)
+        keeper_rel = manager.update_relationship("player", "observatory_keeper", {"respect": 0.2})
+        keeper_rel.add_memory("Discovered the legendary void essence source")
         
         # Environmental consequences
         manager.update_environment({"danger_level": 8})  # Area becomes more dangerous
         
-    # Event: Elder offers wisdom  
+    # Event: Sage offers wisdom  
     if can_seek_wisdom:
-        print("🧙 STORY EVENT: Elder shares ancient knowledge!")
-        manager.set_variable("ancient_knowledge", True)
-        manager.set_variable("knows_secret_passages", True)
-        manager.update_relationship("player", "clan_elder", {"trust": 0.1})
+        print("🧙 STORY EVENT: Sage shares ancient knowledge!")
+        manager.set_variable("cosmic_knowledge", True)
+        manager.set_variable("knows_dimensional_paths", True)
+        manager.update_relationship("player", "void_sage", {"trust": 0.1})
         
     # === SCENARIO 6: Final State Assessment ===
     print("\n📊 Final state assessment...")
@@ -123,36 +123,36 @@ def test_advanced_scenarios():
     print(f"✅ Change history: {summary['recent_changes']} recent changes")
     
     # Show wealth and reputation
-    wealth = manager.variables["gold"] + sum(
+    wealth = manager.variables["energy"] + sum(
         item.quantity * item.properties.get("value", 0) 
         for item in manager.inventory.values()
     )
     avg_reputation = sum(rel.trust + rel.respect for rel in manager.relationships.values()) / len(manager.relationships)
     
     print(f"\n🏆 Character Status:")
-    print(f"   Total Wealth: {wealth} gold")
+    print(f"   Total Energy Wealth: {wealth} units")
     print(f"   Average Reputation: {avg_reputation:.2f}")
-    print(f"   Special Knowledge: {manager.variables.get('ancient_knowledge', False)}")
+    print(f"   Special Knowledge: {manager.variables.get('cosmic_knowledge', False)}")
     
     # === SCENARIO 7: Test Advanced Features ===
     print("\n⚡ Testing advanced features...")
     
     # Test item combination potential
-    pickaxe = manager.inventory["ancestral_pickaxe"] 
-    crystal = manager.inventory.get("ancient_crystal")
-    if crystal:
-        print(f"✅ Can combine pickaxe + crystal: {pickaxe.can_combine_with(crystal)}")
+    crystal = manager.inventory["quantum_crystal"] 
+    essence = manager.inventory.get("void_essence")
+    if essence:
+        print(f"✅ Can combine crystal + essence: {crystal.can_combine_with(essence)}")
     
     # Test available actions in current context
-    actions = pickaxe.get_available_actions(context)
-    print(f"✅ Available pickaxe actions: {actions}")
+    actions = crystal.get_available_actions(context)
+    print(f"✅ Available crystal actions: {actions}")
     
     # Test memory system
-    elder_rel = manager.get_relationship("player", "clan_elder")
-    if elder_rel:
-        print(f"✅ Elder memories: {len(elder_rel.memory_fragments)} stored")
+    sage_rel = manager.get_relationship("player", "void_sage")
+    if sage_rel:
+        print(f"✅ Sage memories: {len(sage_rel.memory_fragments)} stored")
     else:
-        print("✅ Elder relationship not found")
+        print("✅ Sage relationship not found")
     
     print("\n🎉 ADVANCED STATE MANAGEMENT SYSTEM FULLY OPERATIONAL!")
     print("📈 The system successfully handled:")

@@ -1,5 +1,5 @@
 """
-Advanced State Management System for DwarfWeave
+Advanced State Management System for WorldWeaver
 
 This module provides sophisticated state tracking capabilities inspired by
 successful Twine games like "The Play" (relationships), "Hallowmoor" (inventory),
@@ -70,8 +70,8 @@ class ItemState:
             actions.append('use')
         if self.properties.get('equippable', False):
             actions.append('equip')
-        if location == 'forge' and self.properties.get('forgeable', False):
-            actions.append('forge')
+        if location == 'workshop' and self.properties.get('craftable', False):
+            actions.append('craft')
             
         return actions
 

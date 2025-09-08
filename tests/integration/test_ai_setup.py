@@ -47,8 +47,8 @@ def test_storylet_generation():
         "n": 3,
         "themes": ["exploration", "mystery", "danger"],
         "bible": {
-            "setting": "underground_mine",
-            "available_variables": ["danger", "location", "has_pickaxe", "ore"],
+            "setting": "cosmic_observatory",
+            "available_variables": ["resonance", "location", "has_crystal", "energy"],
             "tone": "atmospheric"
         }
     }
@@ -113,7 +113,7 @@ def get_stats():
         print(f"❌ Error getting stats: {e}")
 
 if __name__ == "__main__":
-    print("🎮 DwarfWeave AI Setup & Test Tool")
+    print("🎮 WorldWeaver AI Setup & Test Tool")
     print("=" * 40)
     
     if check_api_setup():

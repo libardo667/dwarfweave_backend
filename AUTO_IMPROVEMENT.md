@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DwarfWeave backend now includes an **automatic story improvement system** that runs whenever new storylets are added to the database. This system ensures that your storylet ecosystem remains healthy, connected, and engaging without manual intervention.
+The WorldWeaver backend now includes an **automatic story improvement system** that runs whenever new storylets are added to the database. This system ensures that your storylet ecosystem remains healthy, connected, and engaging without manual intervention.
 
 ## What It Does
 

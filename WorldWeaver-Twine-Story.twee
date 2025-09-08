@@ -1,5 +1,5 @@
 :: StoryTitle
-DwarfWeave
+WorldWeaver
 
 
 :: StoryData
@@ -119,36 +119,36 @@ body {
 </style>
 
 <div class="start-container">
-    <div class="logo">🌌 DwarfWeave</div>
+    <div class="logo">🌌 WorldWeaver</div>
     <div class="subtitle">
-        Create infinite interactive fiction worlds with AI<br>
-        <em>Where every story is uniquely yours</em>
+        Weave infinite realities across the cosmic tapestry<br>
+        <em>Where every thread creates new possibilities</em>
     </div>
     
     <div class="menu-options">
         <span class="menu-btn" onclick="document.querySelector('a[data-passage=WorldBuilder]').click()">
-            🚀 Build a New World
+            ✨ Weave a New Reality
         </span>
         <span class="menu-btn secondary" onclick="document.querySelector('a[data-passage=Game]').click()">
-            🎮 Play Existing World
+            � Enter Existing Reality
         </span>
     </div>
     
     <!-- Backup Twine links for navigation (hidden but functional) -->
     <div style="display: none;">
-        [[Build a New World->WorldBuilder]]
-        [[Play Existing World->Game]]
+        [[Weave a New Reality->WorldBuilder]]
+        [[Enter Existing Reality->Game]]
     </div>
     
     <div class="features">
-        <h3 style="margin-bottom: 15px; color: #feca57;">✨ What You Can Create</h3>
+        <h3 style="margin-bottom: 15px; color: #feca57;">✨ Realities You Can Weave</h3>
         <div class="feature-list">
-            <div class="feature-item">🐋 Space Whales<br><small>Cosmic adventures</small></div>
-            <div class="feature-item">🤖 Cyberpunk Dwarves<br><small>Tech & tradition</small></div>
-            <div class="feature-item">🏝️ Floating Islands<br><small>Sky adventures</small></div>
-            <div class="feature-item">🌊 Underwater Cities<br><small>Deep sea mysteries</small></div>
-            <div class="feature-item">⏰ Time Loops<br><small>Temporal puzzles</small></div>
-            <div class="feature-item">🎵 Musical Magic<br><small>Harmonic spells</small></div>
+            <div class="feature-item">🌌 Cosmic Storms<br><small>Reality-bending tempests</small></div>
+            <div class="feature-item">🔮 Quantum Echoes<br><small>Time-space mysteries</small></div>
+            <div class="feature-item">🏝️ Floating Realms<br><small>Gravity-defying worlds</small></div>
+            <div class="feature-item">🌊 Dimensional Tides<br><small>Reality fluid landscapes</small></div>
+            <div class="feature-item">⚡ Stellar Currents<br><small>Energy-based civilizations</small></div>
+            <div class="feature-item">🎵 Harmonic Spheres<br><small>Music-based magic</small></div>
         </div>
     </div>
 </div>
@@ -280,37 +280,37 @@ textarea {
 </style>
 
 <div class="world-builder">
-    <h2>🌍 Create Your World</h2>
+    <h2>� Weave Your Reality</h2>
     
     <div class="form-group">
-        <label for="description">Describe Your World:</label>
-        <textarea id="description" placeholder="Paint a vivid picture of your story world..."></textarea>
+        <label for="description">Describe Your Reality:</label>
+        <textarea id="description" placeholder="Paint a vivid picture of your reality's essence..."></textarea>
     </div>
     
     <div class="form-group">
-        <label for="theme">Theme/Genre:</label>
-        <input type="text" id="theme" placeholder="e.g., space whales, cyberpunk dwarves">
+        <label for="theme">Reality Resonance:</label>
+        <input type="text" id="theme" placeholder="e.g., stellar currents, quantum echoes, cosmic storms">
     </div>
     
     <div class="form-group">
-        <label for="tone">Story Tone:</label>
+        <label for="tone">Narrative Frequency:</label>
         <select id="tone">
             <option value="adventure">Adventure</option>
             <option value="wonder">Wonder & Awe</option>
-            <option value="mystery">Mystery</option>
-            <option value="gritty cyberpunk">Gritty Cyberpunk</option>
-            <option value="epic fantasy">Epic Fantasy</option>
+            <option value="mystery">Cosmic Mystery</option>
+            <option value="transcendent">Transcendent</option>
+            <option value="ethereal">Ethereal Dreams</option>
         </select>
     </div>
     
     <div style="margin-bottom: 20px;">
-        <strong>Quick Examples:</strong><br>
-        <button class="example-btn" onclick="loadSpaceWhales()">🐋 Space Whales</button>
-        <button class="example-btn" onclick="loadCyberpunkDwarves()">🤖 Cyberpunk Dwarves</button>
-        <button class="example-btn" onclick="loadFloatingIslands()">🏝️ Floating Islands</button>
+        <strong>Reality Templates:</strong><br>
+        <button class="example-btn" onclick="loadCosmicStorms()">🌌 Cosmic Storms</button>
+        <button class="example-btn" onclick="loadQuantumEchoes()">🔮 Quantum Echoes</button>
+        <button class="example-btn" onclick="loadFloatingRealms()">🏝️ Floating Realms</button>
     </div>
     
-    <button class="generate-btn" onclick="generateWorld()">🚀 Generate My World</button>
+    <button class="generate-btn" onclick="generateWorld()">✨ Weave This Reality</button>
     
     <div id="status" class="status"></div>
 </div>
@@ -322,21 +322,21 @@ textarea {
 </div>
 
 <script>
-function loadSpaceWhales() {
-    document.getElementById('description').value = "A vast cosmos where ancient space whales swim through stellar currents, carrying entire civilizations on their backs. These magnificent creatures navigate between stars using quantum resonance.";
-    document.getElementById('theme').value = "cosmic space whales";
+function loadCosmicStorms() {
+    document.getElementById('description').value = "Reality fractures during cosmic storms, where stellar winds carry fragments of possibility across the void. Travelers learn to navigate these tempests using resonance crystals that sing with the universe's heartbeat.";
+    document.getElementById('theme').value = "cosmic reality storms";
     document.getElementById('tone').value = "wonder";
 }
 
-function loadCyberpunkDwarves() {
-    document.getElementById('description').value = "Deep beneath neon-lit surface cities, cyberpunk dwarves operate quantum techno-forges. They weave digital spells through neural interfaces while maintaining ancient clan traditions.";
-    document.getElementById('theme').value = "cyberpunk quantum technoweaving dwarves";
-    document.getElementById('tone').value = "gritty cyberpunk";
+function loadQuantumEchoes() {
+    document.getElementById('description').value = "Between moments, quantum echoes ripple through existence. Ancient beings have learned to read these temporal whispers, discovering that every choice creates infinite parallel threads in the cosmic weave.";
+    document.getElementById('theme').value = "quantum temporal echoes";
+    document.getElementById('tone').value = "mystery";
 }
 
-function loadFloatingIslands() {
-    document.getElementById('description').value = "Massive islands float through endless skies, held aloft by crystalline cores that hum with ancient magic. Sky pirates sail between them on wind-powered ships.";
-    document.getElementById('theme').value = "floating sky islands";
+function loadFloatingRealms() {
+    document.getElementById('description').value = "Massive realms drift through dimensional currents, each one a fragment of a greater cosmic pattern. Reality-shapers sail between them on vessels powered by crystallized starlight.";
+    document.getElementById('theme').value = "floating dimensional realms";
     document.getElementById('tone').value = "adventure";
 }
 
@@ -378,7 +378,7 @@ async function generateWorld() {
         if (response.ok) {
             status.className = 'status success';
             status.innerHTML = `
-                🎉 Success! Generated ${result.storylets_created} storylets!<br><br>
+                🎉 Success! Wove ${result.storylets_created} reality threads!<br><br>
                 <button onclick="document.querySelector('a[data-passage=Game]').click()" style="
                     background: linear-gradient(45deg, #2ecc71, #27ae60);
                     color: white;
@@ -389,7 +389,7 @@ async function generateWorld() {
                     border-radius: 10px;
                     cursor: pointer;
                     margin-top: 10px;
-                ">🎮 Start Playing Now!</button>
+                ">� Enter Your Reality!</button>
             `;
         } else {
             throw new Error(result.detail || 'Generation failed');
@@ -487,14 +487,14 @@ body {
 </style>
 
 <div class="game-container">
-    <h1 class="game-title">🎮 Your Adventure</h1>
+    <h1 class="game-title">� Your Reality</h1>
     
     <div id="game-content">
-        <p>Loading your story...</p>
+        <p>Weaving your reality threads...</p>
     </div>
     
     <div class="nav-links">
-        <span class="nav-btn" onclick="document.querySelector('a[data-passage=WorldBuilder]').click()">🌍 Build New World</span>
+        <span class="nav-btn" onclick="document.querySelector('a[data-passage=WorldBuilder]').click()">✨ Weave New Reality</span>
         <span class="nav-btn" onclick="location.reload()">🔄 Restart</span>
         <span class="nav-btn" onclick="document.querySelector('a[data-passage=Start]').click()">🏠 Home</span>
     </div>
@@ -543,12 +543,12 @@ body {
                 window.currentChoices = story.choices;
                 window.currentVars = story.vars;
             } else {
-                document.getElementById('game-content').innerHTML = '<p>No storylets found. Please generate a world first!</p><br><span class="nav-btn" onclick="document.querySelector(\'a[data-passage=WorldBuilder]\').click()">Build a World</span>';
+                document.getElementById('game-content').innerHTML = '<p>No reality threads found. Please weave a reality first!</p><br><span class="nav-btn" onclick="document.querySelector(\'a[data-passage=WorldBuilder]\').click()">Weave a Reality</span>';
             }
             
         } catch (error) {
             console.error('Game loading error:', error);
-            document.getElementById('game-content').innerHTML = `<p>Error loading story: ${error.message}</p><br><span class="nav-btn" onclick="document.querySelector('a[data-passage=WorldBuilder]').click()">Build a World</span>`;
+            document.getElementById('game-content').innerHTML = `<p>Error loading reality: ${error.message}</p><br><span class="nav-btn" onclick="document.querySelector('a[data-passage=WorldBuilder]').click()">Weave a Reality</span>`;
         }
     }
     
@@ -583,12 +583,12 @@ body {
                 window.currentChoices = story.choices;
                 window.currentVars = story.vars;
             } else {
-                document.getElementById('game-content').innerHTML = '<p>The story continues...</p><br><span class="nav-btn" onclick="document.querySelector(\'a[data-passage=WorldBuilder]\').click()">Build a New World</span> | <span class="nav-btn" onclick="document.querySelector(\'a[data-passage=Game]\').click()">Restart</span>';
+                document.getElementById('game-content').innerHTML = '<p>The reality weave continues...</p><br><span class="nav-btn" onclick="document.querySelector(\'a[data-passage=WorldBuilder]\').click()">Weave New Reality</span> | <span class="nav-btn" onclick="document.querySelector(\'a[data-passage=Game]\').click()">Restart</span>';
             }
             
         } catch (error) {
             console.error('Choice error:', error);
-            document.getElementById('game-content').innerHTML = `<p>Error continuing story: ${error.message}</p><br><span class="nav-btn" onclick="document.querySelector('a[data-passage=Game]').click()">Try Again</span>`;
+            document.getElementById('game-content').innerHTML = `<p>Error continuing reality: ${error.message}</p><br><span class="nav-btn" onclick="document.querySelector('a[data-passage=Game]').click()">Try Again</span>`;
         }
     };
     

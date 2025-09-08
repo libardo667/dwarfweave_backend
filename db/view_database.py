@@ -11,7 +11,7 @@ load_dotenv()
 
 def view_storylets():
     """Display all storylets in a readable format."""
-    conn = sqlite3.connect('dwarfweave.db')
+    conn = sqlite3.connect('worldweaver.db')
     cursor = conn.cursor()
     
     cursor.execute("SELECT id, title, text_template, requires, choices, weight FROM storylets ORDER BY id")
@@ -53,7 +53,7 @@ def view_storylets():
 
 def view_sessions():
     """Display session data."""
-    conn = sqlite3.connect('dwarfweave.db')
+    conn = sqlite3.connect('worldweaver.db')
     cursor = conn.cursor()
     
     cursor.execute("SELECT session_id, vars, updated_at FROM session_vars ORDER BY updated_at DESC")
@@ -80,7 +80,7 @@ def view_sessions():
 
 def analyze_storylet_connections():
     """Analyze how storylets connect to each other."""
-    conn = sqlite3.connect('dwarfweave.db')
+    conn = sqlite3.connect('worldweaver.db')
     cursor = conn.cursor()
     
     cursor.execute("SELECT id, title, requires, choices FROM storylets")
@@ -135,7 +135,7 @@ def analyze_storylet_connections():
 
 def main():
     """Main menu for database viewer."""
-    print("🗄️  DwarfWeave Database Viewer")
+    print("🗄️  WorldWeaver Database Viewer")
     print("=" * 40)
     print("1. View all storylets")
     print("2. View sessions")

@@ -31,12 +31,12 @@ def generate_contextual_storylets(current_vars: Dict[str, Any], n: int = 3) -> L
     
     # Add location-based themes and logical connections
     location_str = str(location).lower()
-    if "cave" in location_str or "underground" in location_str:
-        themes.extend(["underground", "darkness", "minerals", "depths"])
-    elif "forest" in location_str:
-        themes.extend(["nature", "wildlife", "hidden_paths", "surface"])
-    elif "market" in location_str:
-        themes.extend(["social", "trade", "information", "civilization"])
+    if "void" in location_str or "cosmic" in location_str:
+        themes.extend(["cosmic", "ethereal", "energy", "resonance"])
+    elif "observatory" in location_str:
+        themes.extend(["stellar", "observation", "cosmic_knowledge", "dimensions"])
+    elif "nexus" in location_str:
+        themes.extend(["social", "weaving", "information", "convergence"])
     
     # Build a comprehensive contextual bible with story continuity
     bible = {
@@ -49,10 +49,10 @@ def generate_contextual_storylets(current_vars: Dict[str, Any], n: int = 3) -> L
         },
         "connection_rules": {
             "location_transitions": {
-                "cave_entrance": ["deeper_cave", "surface", "hidden_passage"],
-                "deep_cave": ["cavern", "underground_river", "crystal_chamber"],
-                "forest": ["cave_entrance", "clearing", "deep_forest"],
-                "market": ["forest", "inn", "guild_hall"]
+                "cosmic_observatory": ["stellar_nexus", "void_chamber", "resonance_hall"],
+                "void_chamber": ["dimensional_rift", "quantum_flux", "essence_pool"],
+                "stellar_nexus": ["observatory", "weaving_circle", "cosmic_market"],
+                "reality_forge": ["nexus", "workshop", "harmonic_sphere"]
             },
             "danger_progression": {
                 "low": "Introduce new challenges or discoveries",
@@ -87,22 +87,22 @@ def llm_suggest_storylets(n: int, themes: List[str], bible: Dict[str, Any]) -> L
         # Fallback storylets when no API key is available
         base = [
             {
-                "title": "Creak in the Dark",
-                "text_template": "👂 {name} hears a faint creak behind the support beam. Danger: {danger}.",
-                "requires": {"danger": {"lte": 1}},
+                "title": "Quantum Whispers",
+                "text_template": "🌌 {name} senses subtle vibrations in the cosmic frequencies. Resonance: {resonance}.",
+                "requires": {"resonance": {"lte": 1}},
                 "choices": [
-                    {"label": "Probe with pick", "set": {"danger": {"inc": 1}}},
-                    {"label": "Wedge a shim",    "set": {"danger": {"dec": 1}}},
+                    {"label": "Attune deeper", "set": {"resonance": {"inc": 1}}},
+                    {"label": "Stabilize flow",    "set": {"resonance": {"dec": 1}}},
                 ],
                 "weight": 1.2,
             },
             {
-                "title": "Mushroom Cache",
-                "text_template": "🍄 A pale cluster of cave mushrooms glows softly.",
-                "requires": {"has_pickaxe": True},
+                "title": "Stellar Resonance",
+                "text_template": "✨ Crystalline formations pulse with cosmic energy, singing in harmonic frequencies.",
+                "requires": {"has_crystal": True},
                 "choices": [
-                    {"label": "Harvest carefully", "set": {"food": {"inc": 1}}},
-                    {"label": "Leave them be",     "set": {}},
+                    {"label": "Attune to frequencies", "set": {"energy": {"inc": 1}}},
+                    {"label": "Preserve the harmony",     "set": {}},
                 ],
                 "weight": 1.0,
             },
@@ -192,7 +192,7 @@ def build_feedback_aware_prompt(bible: Dict[str, Any]) -> str:
         "\n- Output ONLY valid JSON with a top-level 'storylets' array"
         "\n- Each storylet MUST have: title, text_template, requires, choices, weight"
         "\n- text_template should use {variable} syntax for dynamic content"
-        "\n- requires should specify conditions like {'location': 'cave'} or {'danger': {'lte': 2}}"
+        "\n- requires should specify conditions like {'location': 'cosmic_observatory'} or {'resonance': {'lte': 2}}"
         "\n- choices is an array with {label, set} where 'set' modifies variables"
         "\n- weight is a float (higher = more likely to appear)"
         "\n\nVARIABLE OPERATIONS:"
@@ -318,9 +318,9 @@ WORLD VARIABLES TO CREATE (extract from the world description):
 - Ensure variables connect storylets into a coherent narrative web
 
 EXAMPLE VARIABLE TYPES FOR DIFFERENT WORLDS:
-- Space whales: quantum_resonance, whale_trust, cosmic_current_strength, star_navigator_rank
-- Cyberpunk dwarves: neural_jack_level, corp_reputation, quantum_weaving_skill, underground_contacts
-- Medieval fantasy: honor, magic_power, kingdom_favor, mystical_knowledge
+- Cosmic mysteries: quantum_resonance, void_attunement, stellar_knowledge, dimensional_stability
+- Reality weavers: weaving_skill, reality_threads, cosmic_reputation, harmonic_mastery
+- Ethereal realms: dream_essence, spectral_connections, planar_knowledge, ethereal_power
 
 Return EXACTLY {count} storylets in this JSON format:
 [

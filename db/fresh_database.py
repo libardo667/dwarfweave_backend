@@ -23,7 +23,7 @@ def create_fresh_database():
     
     # Create new database with timestamp
     import time
-    new_db_name = f'dwarfweave_fresh_{int(time.time())}.db'
+    new_db_name = f'worldweaver_fresh_{int(time.time())}.db'
     
     # Create the new database with proper table creation
     new_engine = create_engine(f'sqlite:///{new_db_name}', future=True)
@@ -48,26 +48,27 @@ def create_fresh_database():
     print(f"📊 Verified: {storylet_count} storylets, {session_count} sessions")
     
     # Rename to replace the old one
-    if os.path.exists('dwarfweave.db'):
-        backup_name = f'dwarfweave_old_{int(time.time())}.db'
+    if os.path.exists('worldweaver.db'):
+        backup_name = f'worldweaver_old_{int(time.time())}.db'
         print(f"📦 Moving old database to: {backup_name}")
         try:
-            os.rename('dwarfweave.db', backup_name)
-            os.rename(new_db_name, 'dwarfweave.db')
+            os.rename('worldweaver.db', backup_name)
+            os.rename(new_db_name, 'worldweaver.db')
             print("✅ Successfully replaced database!")
         except OSError:
             print("⚠️  Could not replace locked database file")
             print(f"   Your fresh database is ready as: {new_db_name}")
             print("   Manual steps:")
             print("   1. Close Twine/stop servers")
-            print(f"   2. Rename {new_db_name} to dwarfweave.db")
+            print(f"   2. Rename {new_db_name} to worldweaver.db")
             print("   3. Restart your applications")
             return new_db_name
     else:
-        os.rename(new_db_name, 'dwarfweave.db')
-        print("✅ Created dwarfweave.db successfully!")
-    
-    return 'dwarfweave.db'
+        os.rename(new_db_name, 'worldweaver.db')
+        print("✅ Created worldweaver.db successfully!")
+        
+    return 'worldweaver.db'
+
 
 if __name__ == "__main__":
     from sqlalchemy import create_engine
@@ -79,10 +80,10 @@ if __name__ == "__main__":
     result = create_fresh_database()
     
     print("\n🎉 SUCCESS! Database is ready for:")
-    print("   🐋 Space whales swimming through the cosmos")
-    print("   🤖 Cyberpunk dwarves technoweaving quantum realities")
-    print("   🌌 Any universe your imagination can create!")
+    print("   🌌 Cosmic storms weaving reality fragments")
+    print("   🔮 Quantum echoes rippling through existence")
+    print("   ✨ Any universe your imagination can create!")
     
-    if result != 'dwarfweave.db':
+    if result != 'worldweaver.db':
         print(f"\n⚠️  Database created as: {result}")
-        print("   Rename this to 'dwarfweave.db' when ready")
+        print("   Rename this to 'worldweaver.db' when ready")

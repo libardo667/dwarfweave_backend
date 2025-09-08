@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test runner for DwarfWeave AI System.
+Test runner for WorldWeaver AI System.
 
 This script runs different categories of tests:
 - AI tests: Core AI functionality
@@ -86,7 +86,7 @@ def main():
     else:
         test_type = "all"
     
-    print("🚀 DWARFWEAVE AI TEST SUITE")
+    print("🚀 WORLDWEAVER AI TEST SUITE")
     print("=" * 60)
     
     if test_type in ["ai", "all"]:

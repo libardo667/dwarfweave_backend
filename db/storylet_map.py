@@ -13,7 +13,7 @@ import os
 
 def get_storylets_from_db():
     """Get all storylets from the database."""
-    conn = sqlite3.connect('dwarfweave.db')
+    conn = sqlite3.connect('worldweaver.db')
     cursor = conn.cursor()
     
     cursor.execute("""
@@ -91,7 +91,7 @@ def generate_html_map(storylets, analysis):
 <!DOCTYPE html>
 <html>
 <head>
-    <title>DwarfWeave Storylet Map</title>
+    <title>WorldWeaver Storylet Map</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         body {{ 
@@ -177,7 +177,7 @@ def generate_html_map(storylets, analysis):
 <body>
     <div class="container">
         <div class="header">
-            <h1>🗺️ DwarfWeave Storylet Map</h1>
+            <h1>🗺️ WorldWeaver Storylet Map</h1>
             <p>Visual analysis of storylet connections and navigation flow</p>
         </div>
         
@@ -268,7 +268,7 @@ def generate_html_map(storylets, analysis):
 
 def main():
     """Generate and display the storylet map."""
-    print("🗺️ Generating DwarfWeave Storylet Map...")
+    print("🗺️ Generating WorldWeaver Storylet Map...")
     
     # Get data
     storylets = get_storylets_from_db()
