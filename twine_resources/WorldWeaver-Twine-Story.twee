@@ -13,113 +13,6 @@ WorldWeaver
 
 
 :: Start {"position":"250,350","size":"100,100"}
-<style>
-body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 20px;
-    min-height: 100vh;
-}
-
-.start-container {
-    max-width: 600px;
-    margin: 50px auto;
-    text-align: center;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 40px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.logo {
-    font-size: 3em;
-    margin-bottom: 10px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.subtitle {
-    font-size: 1.3em;
-    margin-bottom: 40px;
-    opacity: 0.9;
-    line-height: 1.4;
-}
-
-.menu-options {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    margin: 30px auto;
-    align-items: center;
-    max-width: 400px;
-}
-
-.menu-btn {
-    display: block;
-    text-decoration: none;
-    color: white;
-    background: linear-gradient(45deg, #ff6b6b, #feca57);
-    padding: 20px 30px;
-    border-radius: 15px;
-    font-size: 1.2em;
-    font-weight: bold;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    cursor: pointer;
-    border: none;
-    width: 100%;
-}
-
-.menu-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
-}
-
-.menu-btn.secondary {
-    background: linear-gradient(45deg, #667eea, #764ba2);
-}
-
-.features {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.feature-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.feature-item {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 15px;
-    border-radius: 10px;
-    font-size: 0.9em;
-}
-
-@media (max-width: 600px) {
-    .start-container {
-        margin: 20px auto;
-        padding: 30px 20px;
-    }
-    
-    .logo {
-        font-size: 2.5em;
-    }
-    
-    .menu-btn {
-        padding: 15px 20px;
-        font-size: 1.1em;
-    }
-}
-</style>
-
 <div class="start-container">
     <div class="logo">🌌 WorldWeaver</div>
     <div class="subtitle">
@@ -175,112 +68,6 @@ function restartStory() {
 </script>
 
 :: WorldBuilder {"position":"425,200","size":"100,100"}
-<style>
-body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.world-builder {
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 30px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: bold;
-    font-size: 1.1em;
-}
-
-input, textarea, select {
-    width: 100%;
-    padding: 12px;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    background: rgba(255, 255, 255, 0.9);
-    color: #333;
-    box-sizing: border-box;
-}
-
-input:focus, textarea:focus, select:focus {
-    background: rgba(255, 255, 255, 0.95);
-    color: #222;
-    outline: 2px solid #feca57;
-    box-shadow: 0 0 0 3px rgba(254, 202, 87, 0.3);
-}
-
-input:hover, textarea:hover, select:hover {
-    background: rgba(255, 255, 255, 0.95);
-    color: #222;
-}
-
-textarea {
-    height: 100px;
-    resize: vertical;
-    font-family: inherit;
-}
-
-.generate-btn {
-    background: linear-gradient(45deg, #ff6b6b, #feca57);
-    color: white;
-    border: none;
-    padding: 15px 30px;
-    font-size: 1.2em;
-    font-weight: bold;
-    border-radius: 25px;
-    cursor: pointer;
-    width: 100%;
-    margin-top: 20px;
-}
-
-.example-btn {
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    padding: 8px 15px;
-    border-radius: 20px;
-    cursor: pointer;
-    margin: 5px;
-    font-size: 0.9em;
-}
-
-.status {
-    margin-top: 20px;
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-    font-weight: bold;
-    display: none;
-}
-
-.status.loading {
-    background: rgba(52, 152, 219, 0.2);
-    border: 2px solid #3498db;
-}
-
-.status.success {
-    background: rgba(46, 204, 113, 0.2);
-    border: 2px solid #2ecc71;
-}
-
-.status.error {
-    background: rgba(231, 76, 60, 0.2);
-    border: 2px solid #e74c3c;
-}
-</style>
-
 <div class="world-builder">
     <h2>🌌 Weave Your Reality</h2>
     
@@ -414,180 +201,6 @@ async function generateWorld() {
 </script>
 
 :: Game {"position":"600,350","size":"100,100"}
-<style>
-body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 20px;
-    min-height: 100vh;
-}
-
-.game-container {
-    max-width: 400px;
-    width: 100%;
-    margin: 0 auto;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 30px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    min-height: auto;
-    overflow: hidden;
-}
-
-.game-title {
-    text-align: center;
-    font-size: 2.5em;
-    margin-bottom: 30px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-#game-content {
-    line-height: 1.6;
-    font-size: 1.1em;
-}
-
-.choice-btn {
-    display: block;
-    width: 100%;
-    margin: 10px 0;
-    padding: 15px 20px;
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-size: 1.1em;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: left;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-}
-
-.choice-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    background: linear-gradient(45deg, #5a67d8, #6b46c1);
-}
-
-.nav-links {
-    text-align: center;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.nav-btn {
-    display: inline-block;
-    margin: 0 10px;
-    padding: 10px 20px;
-    background: rgba(255, 255, 255, 0.4);
-    color: white;
-    text-decoration: none;
-    border-radius: 10px;
-    font-weight: bold;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    opacity: 1.0;
-}
-
-.nav-btn:hover {
-    background: rgba(255, 255, 255, 0.6);
-    transform: translateY(-1px);
-}
-
-/* Spatial Navigation Compass - Clean Build */
-.spatial-navigation {
-    width: 280px;
-    margin: 20px auto;
-    padding: 15px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.nav-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    grid-template-rows: 1fr 1fr 1fr;
-    gap: 8px;
-    width: 250px;
-    height: 250px;
-    margin: 0 auto;
-}
-
-.nav-cell {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.9em;
-    position: relative;
-}
-
-.nav-cell:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
-    transform: scale(1.02);
-}
-
-.nav-cell.center {
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    border-color: rgba(255, 255, 255, 0.3);
-    cursor: default;
-}
-
-.nav-cell.center:hover {
-    transform: none;
-}
-
-.direction-symbol {
-    font-size: 1.4em;
-    margin-bottom: 4px;
-    line-height: 1;
-}
-
-.direction-name {
-    font-size: 0.7em;
-    font-weight: bold;
-    opacity: 0.8;
-    margin-bottom: 2px;
-}
-
-.current-location {
-    font-size: 0.75em;
-    text-align: center;
-    font-weight: bold;
-    margin-top: 4px;
-    line-height: 1.1;
-}
-
-.location-preview {
-    font-size: 0.65em;
-    text-align: center;
-    opacity: 0.7;
-    line-height: 1.1;
-    max-height: 20px;
-    overflow: hidden;
-}
-
-.nav-status {
-    text-align: center;
-    margin-top: 12px;
-    font-size: 0.85em;
-    padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-}
-</style>
-
 <div class="game-container">
     <h1 class="game-title">🌌 Your Reality</h1>
     
@@ -1681,6 +1294,293 @@ $(document).on(':passagestart', function(ev) {
 // Choice tracking is now integrated directly into the makeChoice function above
 
 :: Stylesheet [stylesheet]
+/* ========== Global Styles ========== */
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+}
+
+/* ========== Start Page Styles ========== */
+.start-container {
+    max-width: 600px;
+    margin: 50px auto;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.logo {
+    font-size: 3em;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.subtitle {
+    font-size: 1.3em;
+    margin-bottom: 40px;
+    opacity: 0.9;
+    line-height: 1.4;
+}
+
+.menu-options {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: 30px auto;
+    align-items: center;
+    max-width: 400px;
+}
+
+.menu-btn {
+    display: inline-block;
+    margin: 0 10px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.4);
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    opacity: 1.0;
+    border: none;
+    font-size: 1.2em;
+}
+
+.menu-btn:hover {
+    background: rgba(255, 255, 255, 0.6);
+    transform: translateY(-1px);
+}
+
+/* Start page specific menu button styling */
+.start-container .menu-btn {
+    display: block;
+    text-decoration: none;
+    color: white;
+    background: linear-gradient(45deg, #ff6b6b, #feca57);
+    padding: 20px 30px;
+    border-radius: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border: none;
+    width: 100%;
+}
+
+.start-container .menu-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+}
+
+.menu-btn.secondary {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+}
+
+.features {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.feature-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.feature-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 0.9em;
+}
+
+/* ========== WorldBuilder Styles ========== */
+.world-builder {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    box-sizing: border-box;
+}
+
+input:focus, textarea:focus, select:focus {
+    background: rgba(255, 255, 255, 0.95);
+    color: #222;
+    outline: 2px solid #feca57;
+    box-shadow: 0 0 0 3px rgba(254, 202, 87, 0.3);
+}
+
+input:hover, textarea:hover, select:hover {
+    background: rgba(255, 255, 255, 0.95);
+    color: #222;
+}
+
+textarea {
+    height: 100px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.generate-btn {
+    background: linear-gradient(45deg, #ff6b6b, #feca57);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+}
+
+.example-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    margin: 5px;
+    font-size: 0.9em;
+}
+
+.status {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: bold;
+    display: none;
+}
+
+.status.loading {
+    background: rgba(52, 152, 219, 0.2);
+    border: 2px solid #3498db;
+}
+
+.status.success {
+    background: rgba(46, 204, 113, 0.2);
+    border: 2px solid #2ecc71;
+}
+
+.status.error {
+    background: rgba(231, 76, 60, 0.2);
+    border: 2px solid #e74c3c;
+}
+
+/* ========== Game Styles ========== */
+.game-container {
+    max-width: none;
+    width: 90%;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    min-height: auto;
+    overflow: visible;
+}
+
+.game-title {
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 30px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+#game-content {
+    line-height: 1.6;
+    font-size: 1.1em;
+}
+
+.choice-btn {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 15px 20px;
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.choice-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(45deg, #5a67d8, #6b46c1);
+}
+
+.nav-links {
+    text-align: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.nav-btn {
+    display: inline-block;
+    margin: 0 10px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.4);
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    opacity: 1.0;
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, 0.6);
+    transform: translateY(-1px);
+}
+
+/* ========== Common Animations ========== */
 .spinner {
     display: inline-block;
     animation: spin 2s linear infinite;
@@ -1691,239 +1591,171 @@ $(document).on(':passagestart', function(ev) {
     100% { transform: rotate(360deg); }
 }
 
+/* ========== Responsive Design ========== */
+@media (max-width: 600px) {
+    .start-container {
+        margin: 20px auto;
+        padding: 30px 20px;
+    }
+    
+    .logo {
+        font-size: 2.5em;
+    }
+    
+    .start-container .menu-btn {
+        padding: 15px 20px;
+        font-size: 1.1em;
+    }
+}
+
 /* ========== Spatial Navigation Styles ========== */
-.spatial-navigation {
-  max-width: 400px;
-  margin: 20px auto;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+
+.game-container .spatial-navigation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px 0;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Debug: Make sure grid is visible */
-.nav-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, 100px) !important;
-    grid-template-rows: repeat(3, 100px) !important;
-    grid-template-areas:
-        "nw n ne"
-        "w  c e"
-        "sw s se" !important;
-    gap: 8px; /* keep gap consistent with padding to avoid overflow */
-    /* Let content define size to prevent overflow/overlap */
-    width: max-content;
-    height: max-content;
-  background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
-  border-radius: 15px;
-    padding: 8px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-  margin: 0 auto;
-  border: 2px solid #444; /* Debug border */
+.game-container .nav-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 70px);
+    grid-template-rows: repeat(3, 70px);
+    gap: 8px;
+    width: 238px;
+    height: 238px;
+    margin: 0 auto;
 }
 
-.nav-cell {
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-    /* Fill the grid cell instead of forcing fixed px to avoid layout glitches */
-    width: 100%;
-    height: 100%;
-  color: #fff;
-  font-size: 0.8em;
+.game-container .nav-cell {
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9em;
+    position: relative;
+    box-sizing: border-box;
 }
 
-.nav-cell:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+.game-container .nav-cell:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.02);
 }
 
-.nav-cell.accessible {
-  background: rgba(76, 175, 80, 0.4);
-  border-color: #4caf50;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+.game-container .nav-cell.center {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border-color: rgba(255, 255, 255, 0.3);
+    cursor: default;
 }
 
-.nav-cell.accessible:hover {
-  background: rgba(76, 175, 80, 0.6);
-  border-color: #66bb6a;
-  transform: translateY(-3px);
-  box-shadow: 0 7px 20px rgba(76, 175, 80, 0.4);
-}
-
-.nav-cell.blocked {
-  background: rgba(244, 67, 54, 0.3);
-  border-color: #f44336;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.nav-cell.empty {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  cursor: default;
-  opacity: 0.4;
-}
-
-.nav-cell.accessible:hover {
-  background: rgba(76, 175, 80, 0.5);
-  border-color: #66bb6a;
-}
-
-.nav-cell.blocked {
-  background: rgba(244, 67, 54, 0.2);
-  border-color: #f44336;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.nav-cell.empty {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  cursor: default;
-  opacity: 0.3;
-}
-
-.nav-cell.center {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: #667eea;
-  cursor: default;
-  box-shadow: 0 0 15px rgba(102, 126, 234, 0.4);
-    grid-area: c;
-}
-
-.nav-cell.center:hover {
-  transform: none;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.game-container .nav-cell.center:hover {
+    transform: none;
 }
 
 .direction-symbol {
-  font-size: 2em;
-  font-weight: bold;
-  margin-bottom: 2px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-  line-height: 1;
+    font-size: 1.4em;
+    margin-bottom: 4px;
+    line-height: 1;
 }
 
 .direction-name {
-  font-size: 0.7em;
-  opacity: 0.9;
-  font-weight: bold;
-  margin-bottom: 2px;
-  line-height: 1;
-}
-
-.location-preview {
-  font-size: 0.6em;
-  text-align: center;
-  margin-top: 2px;
-  opacity: 0.9;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.1;
-}
-
-.player-avatar {
-  font-size: 2.5em;
-  margin-bottom: 2px;
-  animation: pulse 2s infinite;
-  line-height: 1;
+    font-size: 0.7em;
+    font-weight: bold;
+    opacity: 0.8;
+    margin-bottom: 2px;
+    line-height: 1;
 }
 
 .current-location {
-  font-size: 0.6em;
-  text-align: center;
-  font-weight: bold;
-  color: #fff;
-  line-height: 1;
+    font-size: 0.75em;
+    text-align: center;
+    font-weight: bold;
+    margin-top: 4px;
+    line-height: 1.1;
+    color: #fff;
+}
+
+.location-preview {
+    font-size: 0.65em;
+    text-align: center;
+    opacity: 0.7;
+    line-height: 1.1;
+    max-height: 20px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
 }
 
 .nav-status {
-  margin-top: 15px;
-  text-align: center;
-  padding: 12px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 10px;
-  font-size: 0.9em;
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
+    text-align: center;
+    margin-top: 12px;
+    font-size: 0.85em;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    transition: all 0.3s ease;
 }
 
 .nav-status.loading {
-  background: rgba(255, 193, 7, 0.3);
-  border-color: #ffc107;
-  color: #fff;
+    background: rgba(52, 152, 219, 0.3);
+    border-color: #3498db;
 }
 
 .nav-status.success {
-  background: rgba(76, 175, 80, 0.3);
-  border-color: #4caf50;
-  color: #fff;
+    background: rgba(46, 204, 113, 0.3);
+    border-color: #2ecc71;
 }
 
 .nav-status.error {
-  background: rgba(244, 67, 54, 0.3);
-  border-color: #f44336;
-  color: #fff;
+    background: rgba(231, 76, 60, 0.3);
+    border-color: #e74c3c;
 }
 
-.nav-status.success {
-  background: rgba(46, 204, 113, 0.3);
-  border: 1px solid #2ecc71;
-}
-
-.nav-status.error {
-  background: rgba(231, 76, 60, 0.3);
-  border: 1px solid #e74c3c;
-}
-
-.nav-status.loading {
-  background: rgba(52, 152, 219, 0.3);
-  border: 1px solid #3498db;
-}
-
+/* Spatial Navigation Animations */
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
 
-/* Responsive design */
+.player-avatar {
+    font-size: 2.5em;
+    margin-bottom: 2px;
+    animation: pulse 2s infinite;
+    line-height: 1;
+}
+
+/* Spatial Navigation Responsive */
 @media (max-width: 480px) {
-  .nav-grid {
-    padding: 10px;
-    gap: 6px;
-  }
-  
-  .nav-cell {
-    min-height: 60px;
-  }
-  
-  .direction-symbol {
-    font-size: 1.2em;
-  }
-  
-  .player-avatar {
-    font-size: 1.5em;
-  }
+    .nav-grid {
+        padding: 10px;
+        gap: 6px;
+    }
+    
+    .nav-cell {
+        min-height: 60px;
+    }
+    
+    .direction-symbol {
+        font-size: 1.2em;
+    }
+    
+    .player-avatar {
+        font-size: 1.5em;
+    }
 }
-
-/* Explicit grid-area mapping for each direction */
-.nav-cell[data-direction="northwest"] { grid-area: nw; }
-.nav-cell[data-direction="north"]     { grid-area: n;  }
-.nav-cell[data-direction="northeast"] { grid-area: ne; }
-.nav-cell[data-direction="west"]      { grid-area: w;  }
-.nav-cell[data-direction="east"]      { grid-area: e;  }
-.nav-cell[data-direction="southwest"] { grid-area: sw; }
-.nav-cell[data-direction="south"]     { grid-area: s;  }
-.nav-cell[data-direction="southeast"] { grid-area: se; }
