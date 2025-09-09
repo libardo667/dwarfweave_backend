@@ -3,6 +3,7 @@
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 import sys
 from pathlib import Path
 
@@ -19,8 +20,13 @@ class TestEmptyDatabaseSeeding:
 
     def setup_method(self):
         """Create a fresh in-memory database for each test."""
-        self.engine = create_engine("sqlite:///:memory:", echo=False)
-        
+        self.engine = create_engine(
+            "sqlite+pysqlite:///:memory:",        # use the pysqlite driver explicitly
+            echo=False,
+            connect_args={"check_same_thread": False},  # allow cross-thread use
+            poolclass=StaticPool,                       # single shared connection
+        )
+
         Base.metadata.create_all(self.engine)
         self.SessionLocal = sessionmaker(bind=self.engine)
         self.db = self.SessionLocal()

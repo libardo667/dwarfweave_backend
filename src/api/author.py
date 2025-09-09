@@ -13,6 +13,8 @@ from ..models import Storylet, SessionVars
 from ..models.schemas import SuggestReq, SuggestResp, StoryletIn, GenerateStoryletRequest, WorldDescription
 from ..services.llm_service import llm_suggest_storylets, generate_world_storylets
 from ..services.game_logic import auto_populate_storylets
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 
 router = APIRouter()
 
@@ -59,14 +61,26 @@ def author_commit(payload: SuggestResp, db: Session = Depends(get_db)):
     """Commit suggested storylets to the database."""
     count = 0
     for s in payload.storylets:
+        # Normalize title for comparison
+        normalized = (s.title or "").strip()
+        exists = db.query(Storylet).filter(func.lower(Storylet.title) == func.lower(normalized)).first()
+        if exists:
+            # Skip duplicate
+            continue
         row = Storylet(
-            title=s.title,
+            title=normalized,
             text_template=s.text_template,
             requires=s.requires,
             choices=s.choices,
             weight=s.weight
         )
         db.add(row)
+        try:
+            db.flush()
+        except IntegrityError:
+            # Another thread/process inserted a row with same title; skip it
+            db.rollback()
+            continue
         count += 1
     db.commit()
     
@@ -211,15 +225,24 @@ def generate_intelligent_storylets(
             # Validate required fields
             if not all(key in data for key in ["title", "text_template", "requires", "choices", "weight"]):
                 continue
-                
+            # Skip duplicates by title (case-insensitive)
+            normalized = (data.get("title") or "").strip()
+            exists = db.query(Storylet).filter(func.lower(Storylet.title) == func.lower(normalized)).first()
+            if exists:
+                continue
             storylet = Storylet(
-                title=data["title"],
+                title=normalized,
                 text_template=data["text_template"],
                 requires=data["requires"],
                 choices=data["choices"],
                 weight=float(data["weight"])
             )
             db.add(storylet)
+            try:
+                db.flush()
+            except IntegrityError:
+                db.rollback()
+                continue
             created_storylets.append({
                 "title": storylet.title,
                 "text_template": storylet.text_template,
@@ -335,15 +358,24 @@ def generate_targeted_storylets(db: Session = Depends(get_db)):
             # Validate required fields
             if not all(key in data for key in ["title", "text_template", "requires", "choices", "weight"]):
                 continue
-                
+            # Skip duplicates by title (case-insensitive)
+            normalized = (data.get("title") or "").strip()
+            exists = db.query(Storylet).filter(func.lower(Storylet.title) == func.lower(normalized)).first()
+            if exists:
+                continue
             storylet = Storylet(
-                title=data["title"],
+                title=normalized,
                 text_template=data["text_template"],
                 requires=data["requires"],
                 choices=data["choices"],
                 weight=float(data["weight"])
             )
             db.add(storylet)
+            try:
+                db.flush()
+            except IntegrityError:
+                db.rollback()
+                continue
             created_storylets.append({
                 "title": storylet.title,
                 "text_template": storylet.text_template,
@@ -419,14 +451,24 @@ def generate_world_from_description(
         # Add to database
         created_storylets = []
         for storylet_data in storylets:
+            # Normalize title and skip duplicates early
+            normalized = (storylet_data.get("title") or "").strip()
+            exists = db.query(Storylet).filter(func.lower(Storylet.title) == func.lower(normalized)).first()
+            if exists:
+                continue
             storylet = Storylet(
-                title=storylet_data["title"],
+                title=normalized,
                 text_template=storylet_data["text"],
                 choices=storylet_data["choices"],
                 requires=storylet_data.get("requires", {}),
                 weight=storylet_data.get("weight", 1.0)
             )
             db.add(storylet)
+            try:
+                db.flush()
+            except IntegrityError:
+                db.rollback()
+                continue
             created_storylets.append({
                 "title": storylet.title,
                 "text_template": storylet.text_template,

@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-from src.database import SessionLocal, create_tables
+from src.database import create_tables
 from src.services.seed_data import seed_if_empty
 from src.api import game, author
 
@@ -20,8 +20,9 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup code
     create_tables()
-    with SessionLocal() as db:
-        await seed_if_empty(db)
+    # Run seeding in a background worker so it creates/commits its own session
+    # (keeps startup non-blocking and ensures seeds persist).
+    await seed_if_empty(in_background=True)
     yield
     # Shutdown code
     # (none for now)

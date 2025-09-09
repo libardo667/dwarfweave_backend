@@ -10,7 +10,8 @@ class Storylet(Base):
     __tablename__ = 'storylets'
     
     id = Column(Integer, primary_key=True)
-    title = Column(String(200), nullable=False)
+    # Title should be unique to prevent accidental duplicate storylets
+    title = Column(String(200), nullable=False, unique=True)
     text_template = Column(Text, nullable=False)
     requires = Column(JSON, default=dict)
     choices = Column(JSON, default=list)
