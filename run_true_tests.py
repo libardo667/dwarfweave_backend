@@ -16,6 +16,7 @@ import sys
 import os
 import subprocess
 from pathlib import Path
+import pytest
 import time
 
 # Add the project root to the Python path
@@ -30,18 +31,14 @@ def run_test(test_path, description, task_id=None):
     
     try:
         start_time = time.time()
-        result = subprocess.run(
-            [sys.executable, test_path], 
-            capture_output=False, 
-            cwd=project_root
-        )
+        result_code = pytest.main([test_path, "-q"])
         duration = time.time() - start_time
-        
-        if result.returncode == 0:
+
+        if result_code == 0:
             print(f"✅ {description} - PASSED ({duration:.2f}s)")
         else:
             print(f"❌ {description} - FAILED ({duration:.2f}s)")
-        return result.returncode == 0
+        return result_code == 0
     except Exception as e:
         print(f"❌ {description} - ERROR: {e}")
         return False

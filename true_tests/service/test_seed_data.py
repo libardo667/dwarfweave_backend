@@ -20,6 +20,7 @@ class TestEmptyDatabaseSeeding:
     def setup_method(self):
         """Create a fresh in-memory database for each test."""
         self.engine = create_engine("sqlite:///:memory:", echo=False)
+        
         Base.metadata.create_all(self.engine)
         self.SessionLocal = sessionmaker(bind=self.engine)
         self.db = self.SessionLocal()
