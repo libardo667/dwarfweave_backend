@@ -1,43 +1,29 @@
 """Tests for main FastAPI application."""
 
 import pytest
-import sys
-from pathlib import Path
+import requests
 from datetime import datetime, timezone
-from fastapi.testclient import TestClient
 
-# Add parent directory to path to import main
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from main import app
-
-client = TestClient(app)
+BASE_URL = "http://localhost:8000"
 
 
 def test_health_check_endpoint():
-    """Test GET /health returns {'ok': True} and valid ISO 8601 UTC timestamp."""
-    response = client.get("/health")
+    """Test GET /health returns {'ok': True} and valid ISO 8601 UTC timestamp from running server."""
+    try:
+        response = requests.get(f"{BASE_URL}/health", timeout=3)
+    except requests.ConnectionError:
+        pytest.fail("Server is not running at http://localhost:8000. Please start the FastAPI server before running this test.")
     
-    # Check status code
     assert response.status_code == 200
-    
-    # Check response structure
     data = response.json()
     assert "ok" in data
     assert "time" in data
-    
-    # Check 'ok' is True
     assert data["ok"] is True
-    
-    # Check timestamp is valid ISO 8601 format with Z suffix
     timestamp_str = data["time"]
     assert timestamp_str.endswith("Z"), "Timestamp should end with 'Z' for UTC"
-    
-    # Parse the timestamp to ensure it's valid ISO 8601
-    # Remove 'Z' and parse
     timestamp_without_z = timestamp_str[:-1]
     try:
         parsed_time = datetime.fromisoformat(timestamp_without_z)
-        # Ensure it's recent (within last minute)
         now = datetime.now(timezone.utc)
         time_diff = abs((now - parsed_time).total_seconds())
         assert time_diff < 60, "Health check timestamp should be recent"
@@ -46,17 +32,20 @@ def test_health_check_endpoint():
 
 
 def test_health_check_response_content_type():
-    """Test health check returns JSON content type."""
-    response = client.get("/health")
+    """Test health check returns JSON content type from running server."""
+    try:
+        response = requests.get(f"{BASE_URL}/health", timeout=3)
+    except requests.ConnectionError:
+        pytest.fail("Server is not running at http://localhost:8000. Please start the FastAPI server before running this test.")
     assert response.headers["content-type"] == "application/json"
 
 
 def test_health_check_consistent_format():
-    """Test health check returns consistent response format across multiple calls."""
-    # Make multiple calls
-    responses = [client.get("/health") for _ in range(3)]
-    
-    # All should be successful
+    """Test health check returns consistent response format across multiple calls to running server."""
+    try:
+        responses = [requests.get(f"{BASE_URL}/health", timeout=3) for _ in range(3)]
+    except requests.ConnectionError:
+        pytest.fail("Server is not running at http://localhost:8000. Please start the FastAPI server before running this test.")
     for response in responses:
         assert response.status_code == 200
         data = response.json()

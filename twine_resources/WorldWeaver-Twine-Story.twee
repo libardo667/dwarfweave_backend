@@ -38,12 +38,12 @@ WorldWeaver
     <div class="features">
         <h3 style="margin-bottom: 15px; color: #feca57;">✨ Realities You Can Weave</h3>
         <div class="feature-list">
-            <div class="feature-item">🌌 Cosmic Storms<br><small>Reality-bending tempests</small></div>
-            <div class="feature-item">🔮 Quantum Echoes<br><small>Time-space mysteries</small></div>
-            <div class="feature-item">🏝️ Floating Realms<br><small>Gravity-defying worlds</small></div>
-            <div class="feature-item">🌊 Dimensional Tides<br><small>Reality fluid landscapes</small></div>
-            <div class="feature-item">⚡ Stellar Currents<br><small>Energy-based civilizations</small></div>
-            <div class="feature-item">🎵 Harmonic Spheres<br><small>Music-based magic</small></div>
+            <div class="feature-item">🌌 Cosmic Storms<small>Reality-bending tempests</small></div>
+            <div class="feature-item">🔮 Quantum Echoes<small>Time-space mysteries</small></div>
+            <div class="feature-item">🏝️ Floating Realms<small>Gravity-defying worlds</small></div>
+            <div class="feature-item">🌊 Dimensional Tides<small>Reality fluid landscapes</small></div>
+            <div class="feature-item">⚡ Stellar Currents<small>Energy-based civilizations</small></div>
+            <div class="feature-item">🎵 Harmonic Spheres<small>Music-based magic</small></div>
         </div>
     </div>
 </div>
@@ -210,6 +210,7 @@ async function generateWorld() {
 
     <!-- Spatial Navigation Compass - Clean Build -->
     <div class="spatial-navigation">
+        <<nobr>>
         <div style="text-align: center; font-weight: 600; margin-bottom: 12px; color: #feca57;">🧭 Spatial Compass</div>
         
         <div class="nav-grid" id="nav-grid-in-game">
@@ -258,6 +259,7 @@ async function generateWorld() {
                 <div class="location-preview" id="nav-southeast"></div>
             </div>
         </div>
+        <</nobr>>
         
         <div class="nav-status" id="nav-status">Ready to explore...</div>
     </div>
@@ -1293,7 +1295,7 @@ $(document).on(':passagestart', function(ev) {
 
 // Choice tracking is now integrated directly into the makeChoice function above
 
-:: Stylesheet [stylesheet]
+:: Story Stylesheet [stylesheet]
 /* ========== Global Styles ========== */
 body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1620,21 +1622,22 @@ textarea {
     background: rgba(0, 0, 0, 0.2);
     border-radius: 15px;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    max-width: 400px; /* Adjust as needed */
+    margin: 0 auto;
 }
 
 .game-container .nav-grid {
     display: grid;
-    grid-template-columns: repeat(3, 70px);
-    grid-template-rows: repeat(3, 70px);
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
     gap: 8px;
-    width: 238px;
-    height: 238px;
-    margin: 0 auto;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 350px; /* Adjust as needed */
 }
 
 .game-container .nav-cell {
-    width: 70px;
-    height: 70px;
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
@@ -1647,6 +1650,9 @@ textarea {
     font-size: 0.9em;
     position: relative;
     box-sizing: border-box;
+    aspect-ratio: 1 / 1;
+    min-width: 0;
+    min-height: 0;
 }
 
 .game-container .nav-cell:hover {

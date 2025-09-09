@@ -220,7 +220,12 @@ class TestCacheCleanupLogic:
     def test_cleanup_endpoint_integration(self):
         """Test cleanup endpoint through FastAPI test client."""
         # This is more of an integration test, but validates the endpoint works
-        response = client.post("/api/admin/cleanup")
+        import requests
+        BASE_URL = "http://localhost:8000"
+        try:
+            response = requests.post(f"{BASE_URL}/api/admin/cleanup", timeout=3)
+        except requests.ConnectionError:
+            pytest.fail("Server is not running at http://localhost:8000. Please start the FastAPI server before running this test.")
         
         # Should succeed (even if no sessions to clean)
         assert response.status_code == 200

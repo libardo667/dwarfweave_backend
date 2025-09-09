@@ -21,7 +21,7 @@ async def lifespan(app: FastAPI):
     # Startup code
     create_tables()
     with SessionLocal() as db:
-        seed_if_empty(db)
+        await seed_if_empty(db)
     yield
     # Shutdown code
     # (none for now)

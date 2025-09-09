@@ -1,7 +1,7 @@
 """Tests for author API input validation."""
 
 import pytest
-from fastapi.testclient import TestClient
+import requests
 from fastapi import HTTPException
 import sys
 from pathlib import Path
@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from main import app
 from src.models.schemas import SuggestReq, GenerateStoryletRequest, WorldDescription
 
-client = TestClient(app)
+BASE_URL = "http://localhost:8000"
 
 
 class TestAuthorInputValidation:
@@ -111,52 +111,47 @@ class TestAuthorInputValidation:
         assert "ensure this value is less than or equal to 50" in str(exc_info.value)
     
     def test_populate_endpoint_target_count_validation(self):
-        """Test /author/populate endpoint validates target_count parameter."""
-        # Test valid target_count values
+        """Test /author/populate endpoint validates target_count parameter using real server."""
         valid_responses = []
         for target_count in [1, 50, 100]:
-            response = client.post(f"/author/populate?target_count={target_count}")
-            # May succeed or fail due to other reasons, but should not fail on validation
+            try:
+                response = requests.post(f"{BASE_URL}/author/populate?target_count={target_count}", timeout=3)
+            except requests.ConnectionError:
+                pytest.fail("Server is not running at http://localhost:8000. Please start the FastAPI server before running this test.")
             if response.status_code != 400:
                 valid_responses.append(response.status_code)
-        
-        # All should either succeed (200) or fail for non-validation reasons (500, etc.)
         assert all(code != 400 for code in valid_responses), "Valid target_count values should not return 400"
-        
         # Test invalid target_count values - too small
-        response = client.post("/author/populate?target_count=0")
+        response = requests.post(f"{BASE_URL}/author/populate?target_count=0", timeout=3)
         assert response.status_code == 400
         error_detail = response.json()["detail"]
         assert "target_count must be at least 1" in error_detail
-        
-        response = client.post("/author/populate?target_count=-5")
+        response = requests.post(f"{BASE_URL}/author/populate?target_count=-5", timeout=3)
         assert response.status_code == 400
         error_detail = response.json()["detail"]
         assert "target_count must be at least 1" in error_detail
-        
         # Test invalid target_count values - too large
-        response = client.post("/author/populate?target_count=150")
+        response = requests.post(f"{BASE_URL}/author/populate?target_count=150", timeout=3)
         assert response.status_code == 400
         error_detail = response.json()["detail"]
         assert "target_count cannot exceed 100" in error_detail
-        
-        response = client.post("/author/populate?target_count=500")
+        response = requests.post(f"{BASE_URL}/author/populate?target_count=500", timeout=3)
         assert response.status_code == 400
         error_detail = response.json()["detail"]
         assert "target_count cannot exceed 100" in error_detail
     
     def test_suggest_endpoint_with_invalid_n(self):
-        """Test /author/suggest endpoint rejects invalid n values."""
-        # Test with invalid payload
+        """Test /author/suggest endpoint rejects invalid n values using real server."""
         invalid_payload = {
             "n": 25,  # Too large
             "themes": ["adventure"],
             "bible": {}
         }
-        
-        response = client.post("/author/suggest", json=invalid_payload)
+        try:
+            response = requests.post(f"{BASE_URL}/author/suggest", json=invalid_payload, timeout=3)
+        except requests.ConnectionError:
+            pytest.fail("Server is not running at http://localhost:8000. Please start the FastAPI server before running this test.")
         assert response.status_code == 422  # Validation error
-        
         error_detail = response.json()
         assert "validation error" in str(error_detail).lower()
     
