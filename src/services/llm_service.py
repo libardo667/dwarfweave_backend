@@ -431,6 +431,113 @@ def generate_world_frame(description: str, theme: str, player_role: str = "adven
     return _inject_baseline_laws(frame)
 
 
+# ---------------------------------------------------------------------------
+# POV-SEED generation (item 10): seed an arriving inhabitant's vantage INTO the frame.
+# Each arrival is an individual world (a POV) seeded into the shared one — coalescence.
+# ---------------------------------------------------------------------------
+
+def _frame_location_names(frame: Dict[str, Any]) -> List[str]:
+    """Pull the frame's location names (handles both {name,...} dicts and bare strings)."""
+    names = []
+    for loc in (frame.get("locations") or []):
+        if isinstance(loc, dict) and loc.get("name"):
+            names.append(str(loc["name"]))
+        elif isinstance(loc, str) and loc:
+            names.append(loc)
+    return names
+
+
+def _fallback_pov_seed(frame: Dict[str, Any], pov: str, count: int) -> List[Dict[str, Any]]:
+    """Deterministic offline POV-seed: a single arrival storylet at the frame's first location."""
+    locations = _frame_location_names(frame)
+    loc = locations[0] if locations else "threshold"
+    return [{
+        "title": f"Arrival: {pov[:80]}",
+        "text": f"{pov} arrives at {loc}, and the world makes room for one more vantage.",
+        "requires": {"location": loc},
+        "choices": [
+            {"label": "Take in the surroundings", "set": {}},
+            {"label": "Press inward", "set": {}},
+        ],
+        "weight": 1.0,
+    }]
+
+
+def build_pov_seed_prompt(frame: Dict[str, Any], pov: str, count: int) -> str:
+    """Prompt to seed storylets from an arriving POV WITHIN the existing frame."""
+    locations = _frame_location_names(frame)
+    loc_list = ", ".join(locations) if locations else "(the frame lists no locations; invent one consistent with it)"
+    return f"""A new inhabitant is arriving into an existing world. Seed their POINT OF VIEW into it — do NOT redesign the world.
+
+THE WORLD FRAME (the bible — treat as fixed ground truth):
+{json.dumps(frame, indent=2, ensure_ascii=True)}
+
+THE ARRIVING INHABITANT (their vantage): {pov}
+
+Write {count} storylets that are THIS inhabitant's entry into the world, seen from THEIR vantage. Requirements:
+- Set each storylet WITHIN an EXISTING location. requires.location MUST be one of: {loc_list}
+- Draw on the frame's factions, tensions, entities, and laws — this POV has a stake in them.
+- Use the world's own vocabulary. Do not introduce a different genre or setting.
+- Each storylet: 2-3 meaningful choices whose "set" moves world variables (including any the laws name).
+
+Return a JSON object with a "storylets" array of EXACTLY {count}:
+{{
+  "storylets": [
+    {{
+      "title": "from this POV's vantage",
+      "text": "immersive entry text; use {{variable}} for dynamic content",
+      "requires": {{"location": "an_existing_location"}},
+      "choices": [{{"label": "...", "set": {{"variable": "value"}}}}],
+      "weight": 1.0
+    }}
+  ]
+}}
+
+Only the storylets. This POV is seeding into the shared world, not founding a new one."""
+
+
+def generate_pov_seed(frame: Dict[str, Any], pov: str, count: int = 2) -> List[Dict[str, Any]]:
+    """Generate storylets seeding an arriving POV into the frame; normalized like world storylets."""
+    if not ai_available():
+        return _fallback_pov_seed(frame, pov, count)
+
+    try:
+        client, model = get_llm()
+        prompt = build_pov_seed_prompt(frame, pov, count)
+        content = complete_json(
+            client, model,
+            [
+                {"role": "system", "content": "You seed a single inhabitant's POV into an existing world frame. Return only the requested JSON."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.8,
+            max_tokens=2500,
+        )
+        storylets = parse_storylets(content)
+        if not storylets:
+            return _fallback_pov_seed(frame, pov, count)
+    except Exception as e:
+        print(f"POV-seed generation failed, using fallback: {e}")
+        return _fallback_pov_seed(frame, pov, count)
+
+    normalized = []
+    for s in storylets:
+        choices = []
+        for c in (s.get("choices") or [{"label": "Continue", "set": {}}]):
+            choices.append({
+                "label": c.get("label") or c.get("text", "Continue"),
+                "set": c.get("set") or c.get("set_vars", {}),
+            })
+        normalized.append({
+            "title": s.get("title", "An Arrival"),
+            "text": s.get("text", f"{pov} arrives."),
+            "requires": s.get("requires", {}),
+            "choices": choices,
+            "weight": float(s.get("weight", 1.0)),
+        })
+    return normalized
+
+
 def generate_world_storylets(description: str, theme: str, player_role: str = "adventurer",
                            key_elements: List[str] | None = None, tone: str = "adventure", 
                            count: int = 15) -> List[Dict[str, Any]]:

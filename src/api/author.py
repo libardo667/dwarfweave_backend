@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import Storylet, SessionVars, WorldFrame
-from ..models.schemas import SuggestReq, SuggestResp, StoryletIn, GenerateStoryletRequest, WorldDescription
-from ..services.llm_service import llm_suggest_storylets, generate_world_storylets, generate_world_frame
+from ..models.schemas import SuggestReq, SuggestResp, StoryletIn, GenerateStoryletRequest, WorldDescription, POVSeedRequest
+from ..services.llm_service import llm_suggest_storylets, generate_world_storylets, generate_world_frame, generate_pov_seed
 from ..services.game_logic import auto_populate_storylets
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
@@ -480,6 +480,75 @@ def generate_frame(world_description: WorldDescription, db: Session = Depends(ge
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Frame generation failed: {str(e)}")
+
+
+@router.post("/seed-pov")
+def seed_pov(request: POVSeedRequest, db: Session = Depends(get_db)):
+    """Seed an arriving inhabitant's POV into the existing world frame (item 10).
+
+    Coalescence, literally: each arrival is an individual world (a POV) seeded into the
+    shared one. Reads the current frame as grounding, generates storylets from THAT
+    vantage within existing locations, and stores them ``origin="inferred"`` (inferred
+    from the grounded frame). Additive — never wipes. Requires a frame to seed into.
+    """
+    frame_row = _current_frame_row(db)
+    if not frame_row:
+        raise HTTPException(
+            status_code=400,
+            detail="No world frame yet — generate one first (POST /author/generate-frame).",
+        )
+    try:
+        storylets = generate_pov_seed(frame_row.frame or {}, request.pov, request.count)
+
+        created = []
+        for data in storylets:
+            normalized = (data.get("title") or "").strip()
+            if not normalized:
+                continue
+            exists = db.query(Storylet).filter(func.lower(Storylet.title) == func.lower(normalized)).first()
+            if exists:
+                continue
+            storylet = Storylet(
+                title=normalized,
+                text_template=data["text"],
+                choices=data["choices"],
+                requires=data.get("requires", {}),
+                weight=data.get("weight", 1.0),
+                origin="inferred",  # seeded from the grounded frame
+            )
+            try:
+                with db.begin_nested():
+                    db.add(storylet)
+            except IntegrityError:
+                continue
+            created.append({
+                "title": storylet.title,
+                "text_template": storylet.text_template,
+                "requires": data.get("requires", {}),
+                "choices": storylet.choices,
+                "weight": storylet.weight,
+                "origin": storylet.origin,
+            })
+        db.commit()
+
+        # Lightweight spatial placement for the new seeds (no destructive repositioning).
+        if created:
+            from ..services.spatial_navigator import SpatialNavigator
+            new_ids = [st.id for st in db.query(Storylet).filter(Storylet.title.in_([c["title"] for c in created]))]
+            SpatialNavigator.auto_assign_coordinates(db, new_ids)
+
+        return {
+            "success": True,
+            "pov": request.pov,
+            "seeded": len(created),
+            "frame_version": frame_row.version,
+            "storylets": created,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"POV-seed failed: {str(e)}")
 
 
 @router.post("/generate-world")

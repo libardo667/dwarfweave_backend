@@ -63,6 +63,12 @@ class GenerateStoryletRequest(BaseModel):
     intelligent: bool = Field(default=True, description="Use intelligent analysis")
 
 
+class POVSeedRequest(BaseModel):
+    """Request to seed an arriving inhabitant's POV into the existing world frame (item 10)."""
+    pov: str = Field(..., min_length=3, max_length=500, description="Who is arriving — the vantage to seed from")
+    count: int = Field(default=2, ge=1, le=5, description="How many storylets to seed from this POV")
+
+
 class WorldDescription(BaseModel):
     """Request model for generating a complete world from user description."""
     description: str = Field(..., min_length=10, max_length=5000, description="Detailed description of your story world")
