@@ -433,16 +433,24 @@ def generate_targeted_storylets(db: Session = Depends(get_db)):
 @router.post("/generate-world")
 def generate_world_from_description(
     world_description: WorldDescription,
+    reset: bool = False,
+    improve: bool = False,
     db: Session = Depends(get_db)
 ):
-    """Generate a complete storylet ecosystem from a world description."""
+    """Generate a storylet ecosystem from a world description.
+
+    Non-destructive by default (item 10): generation ADDS to the existing world so it
+    can accrete over time. Pass ``reset=True`` to wipe first; ``improve=True`` to run
+    auto-improvement inline (otherwise the loom heals out-of-band).
+    """
     try:
-        # Clear existing storylets for fresh start
-        existing_count = db.query(Storylet).count()
-        if existing_count > 0:
-            db.query(Storylet).delete()
-            db.commit()
-            print(f"🗑️ Cleared {existing_count} existing storylets")
+        # Only wipe on an explicit reset — generation accretes by default.
+        if reset:
+            existing_count = db.query(Storylet).count()
+            if existing_count > 0:
+                db.query(Storylet).delete()
+                db.commit()
+                print(f"Reset: cleared {existing_count} existing storylets")
         
         # Generate world-specific storylets using AI
         storylets = generate_world_storylets(
@@ -469,11 +477,10 @@ def generate_world_from_description(
                 requires=storylet_data.get("requires", {}),
                 weight=storylet_data.get("weight", 1.0)
             )
-            db.add(storylet)
             try:
-                db.flush()
+                with db.begin_nested():
+                    db.add(storylet)
             except IntegrityError:
-                db.rollback()
                 continue
             created_storylets.append({
                 "title": storylet.title,
@@ -566,33 +573,33 @@ def generate_world_from_description(
         print(f"🌍 Generated world with {len(generated_locations)} locations: {', '.join(generated_locations)}")
         print(f"🎭 Identified themes: {', '.join(generated_themes)}")
         
-        # Auto-improve storylets after world generation
-        from ..services.auto_improvement import auto_improve_storylets, should_run_auto_improvement, get_improvement_summary
-        
         total_storylets = len(storylets) + 1
         base_response = {
             "success": True,
-            "message": f"🎉 Generated {total_storylets} storylets for your {world_description.theme} world!",
+            "message": f"Generated {total_storylets} storylets for your {world_description.theme} world!",
             "storylets_created": total_storylets,
             "theme": world_description.theme,
             "player_role": world_description.player_role,
             "tone": world_description.tone,
             "storylets": created_storylets[:3]  # Return first 3 as preview
         }
-        
-        if should_run_auto_improvement(total_storylets, "world-generation"):
-            improvement_results = auto_improve_storylets(
-                db=db,
-                trigger=f"world-generation ({total_storylets} storylets)",
-                run_smoothing=True,
-                run_deepening=True
+
+        # Auto-improvement is opt-in and off the default generation path (item 06/10);
+        # the loom heals out-of-band.
+        if improve:
+            from ..services.auto_improvement import (
+                auto_improve_storylets, should_run_auto_improvement, get_improvement_summary,
             )
-            
-            base_response["auto_improvements"] = get_improvement_summary(improvement_results)
-            base_response["improvement_details"] = improvement_results
-            
-            print(f"🤖 {get_improvement_summary(improvement_results)}")
-        
+            if should_run_auto_improvement(total_storylets, "world-generation"):
+                improvement_results = auto_improve_storylets(
+                    db=db,
+                    trigger=f"world-generation ({total_storylets} storylets)",
+                    run_smoothing=True,
+                    run_deepening=True,
+                )
+                base_response["auto_improvements"] = get_improvement_summary(improvement_results)
+                base_response["improvement_details"] = improvement_results
+
         return base_response
         
     except Exception as e:
