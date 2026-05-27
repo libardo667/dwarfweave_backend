@@ -146,50 +146,16 @@ class StorySmoother:
         return exit_choices
     
     def _generate_travel_text(self, from_loc: str, to_loc: str) -> str:
-        """Generate thematic travel text between locations."""
-        travel_phrases = {
-            ('Clan Hall', 'Neon Caverns'): "Venture into the glowing depths of the caverns",
-            ('Clan Hall', 'Corporate Stronghold'): "March toward the corporate district",
-            ('Clan Hall', 'Old Clan Library'): "Return to the ancient archives",
-            ('Clan Hall', 'Rusted Halls'): "Explore the abandoned industrial sector",
-            
-            ('Neon Caverns', 'Clan Hall'): "Return to the clan gathering place",
-            ('Neon Caverns', 'Corporate Stronghold'): "Ascend to the corporate towers",
-            ('Neon Caverns', 'Old Clan Library'): "Seek knowledge in the old archives",
-            ('Neon Caverns', 'Rusted Halls'): "Investigate the rusted machinery",
-            
-            ('Corporate Stronghold', 'Clan Hall'): "Retreat to clan territory",
-            ('Corporate Stronghold', 'Neon Caverns'): "Descend into the neon-lit depths",
-            ('Corporate Stronghold', 'Old Clan Library'): "Research in the ancient library",
-            ('Corporate Stronghold', 'Rusted Halls'): "Investigate the industrial ruins",
-            
-            ('Old Clan Library', 'Clan Hall'): "Return to the main clan area",
-            ('Old Clan Library', 'Neon Caverns'): "Venture into the illuminated caverns",
-            ('Old Clan Library', 'Corporate Stronghold'): "Confront the corporate power",
-            ('Old Clan Library', 'Rusted Halls'): "Explore the forgotten machinery",
-            
-            ('Rusted Halls', 'Clan Hall'): "Head back to clan territory",
-            ('Rusted Halls', 'Neon Caverns'): "Enter the glowing underground",
-            ('Rusted Halls', 'Corporate Stronghold'): "Challenge the corporate authority",
-            ('Rusted Halls', 'Old Clan Library'): "Consult the ancient texts",
-        }
-        
-        # Try to find specific travel text
-        specific_text = travel_phrases.get((from_loc, to_loc))
-        if specific_text:
-            return specific_text
-        
-        # Generate generic travel text
+        """Generic, world-agnostic travel text between locations."""
         generic_travels = [
             f"Travel to {to_loc}",
             f"Journey toward {to_loc}",
             f"Head to {to_loc}",
             f"Move to {to_loc}",
-            f"Explore {to_loc}"
+            f"Explore {to_loc}",
         ]
-        
         return random.choice(generic_travels)
-    
+
     def generate_variable_requirement_storylets(self) -> List[Dict]:
         """Generate new storylets that require the dead-end variables."""
         new_storylets = []
@@ -229,183 +195,81 @@ class StorySmoother:
         return new_storylets
     
     def _generate_variable_storylet(self, var: str, setting_info: List[Tuple]) -> Tuple[str, str]:
-        """Generate storylet content based on the variable type."""
-        var_themes = {
-            'corp_reputation': {
-                'title': 'Corporate Recognition',
-                'text': 'Your reputation within the corporate hierarchy opens new doors. Security nodes recognize your clearance level and grant access to restricted areas.'
-            },
-            'quantum_weaving_skill': {
-                'title': 'Quantum Mastery',
-                'text': 'Your understanding of quantum weaving allows you to manipulate the fabric of reality here. The ancient mechanisms respond to your skilled touch.'
-            },
-            'underground_contacts': {
-                'title': 'Underground Network',
-                'text': 'Your connections in the underground network prove invaluable. Hidden allies emerge from the shadows to provide assistance.'
-            },
-            'player_role': {
-                'title': 'Role Recognition',
-                'text': 'Your established role within the dwarven community grants you special privileges and responsibilities in this situation.'
-            }
-        }
-        
-        theme = var_themes.get(var, {
-            'title': f'{var.replace("_", " ").title()} Advantage',
-            'text': f'Your {var.replace("_", " ")} proves beneficial in this situation.'
-        })
-        
-        return theme['title'], theme['text']
-    
+        """Generic storylet content derived from the variable name (no baked-in worlds)."""
+        title = f'{var.replace("_", " ").title()} Advantage'
+        text = f'Your {var.replace("_", " ")} proves beneficial in this situation.'
+        return title, text
+
     def _choose_location_for_variable(self, var: str) -> str:
-        """Choose an appropriate location for a variable-dependent storylet."""
-        var_locations = {
-            'corp_reputation': 'Corporate Stronghold',
-            'quantum_weaving_skill': 'Old Clan Library',
-            'underground_contacts': 'Rusted Halls',
-            'player_role': 'Clan Hall'
-        }
-        
-        # Get location or pick a random one if variable not in dictionary
-        if var in var_locations:
-            return var_locations[var]
-        else:
-            available_locations = list(self.locations - {'No Location'})
-            return random.choice(available_locations) if available_locations else 'Clan Hall'
-    
+        """Pick an existing location for a variable-dependent storylet (never invents one)."""
+        available_locations = list(self.locations - {'No Location'})
+        return random.choice(available_locations) if available_locations else 'No Location'
+
     def fix_spatial_integration(self, dry_run: bool = False) -> Dict:
+        """Place 'No Location' storylets into the world's EXISTING locations and connect
+        locations with movement choices.
+
+        World-agnostic (item 03): never invents named locations — it heals whatever world
+        it is given instead of importing a foreign one.
         """
-        Fix spatial integration by assigning locations to storylets with 'No Location'
-        and creating movement connections between locations.
-        """
-        print("🗺️  Fixing spatial integration...")
-        
-        # Define new thematic locations for spatial expansion
-        new_locations = [
-            "Diagnostic Laboratory", "Testing Grounds", "Protocol Chamber",
-            "Stability Core", "Insight Archive", "Discovery Vault",
-            "Analysis Station", "Evaluation Center", "Transition Hub",
-            "Data Observatory", "Anomaly Chamber", "Deep Dive Center",
-            "Evaluation Plaza", "Insight Nexus", "Progress Hall"
-        ]
-        
-        fixes_applied = {
-            'locations_assigned': 0,
-            'connections_created': 0,
-            'modified_storylets': []
-        }
-        
-        # Find storylets with no location
-        no_location_storylets = [s for s in self.storylets 
-                               if s['requires'].get('location', 'No Location') == 'No Location']
-        
+        print("Fixing spatial integration...")
+
+        fixes_applied = {'locations_assigned': 0, 'connections_created': 0, 'modified_storylets': []}
+
+        no_location_storylets = [s for s in self.storylets
+                                 if s['requires'].get('location', 'No Location') == 'No Location']
         if not no_location_storylets:
-            print("✅ All storylets already have locations assigned")
             return fixes_applied
-            
-        print(f"📍 Found {len(no_location_storylets)} storylets without locations")
-        
-        # Assign locations intelligently based on content
-        location_index = 0
-        for storylet in no_location_storylets:
-            title_lower = storylet['title'].lower()
-            
-            # Smart location assignment based on content
-            if 'diagnostic' in title_lower:
-                location = "Diagnostic Laboratory"
-            elif 'stability' in title_lower or 'stable' in title_lower:
-                location = "Stability Core"
-            elif 'insight' in title_lower:
-                location = "Insight Archive"
-            elif 'discovery' in title_lower or 'reveal' in title_lower:
-                location = "Discovery Vault"
-            elif 'analysis' in title_lower or 'analyze' in title_lower:
-                location = "Analysis Station"
-            elif 'evaluation' in title_lower or 'evaluate' in title_lower:
-                location = "Evaluation Center"
-            elif 'transition' in title_lower:
-                location = "Transition Hub"
-            elif 'data' in title_lower or 'stream' in title_lower:
-                location = "Data Observatory"
-            elif 'anomal' in title_lower:
-                location = "Anomaly Chamber"
-            elif 'deep' in title_lower:
-                location = "Deep Dive Center"
-            elif 'progress' in title_lower:
-                location = "Progress Hall"
-            elif 'protocol' in title_lower:
-                location = "Protocol Chamber"
-            elif 'test' in title_lower:
-                location = "Testing Grounds"
-            else:
-                # Round-robin assignment for generic storylets
-                all_locations = list(self.locations - {'No Location'}) + new_locations
-                location = all_locations[location_index % len(all_locations)]
-                location_index += 1
-            
-            # Update the storylet's requirements
+
+        existing_locations = list(self.locations - {'No Location'})
+        if not existing_locations:
+            # We do not invent locations, so there is nothing to anchor these to.
+            return fixes_applied
+
+        for i, storylet in enumerate(no_location_storylets):
+            location = existing_locations[i % len(existing_locations)]
             storylet['requires']['location'] = location
-            
             if not dry_run:
                 conn = sqlite3.connect(self.db_path)
                 cursor = conn.cursor()
-                cursor.execute("""
-                    UPDATE storylets 
-                    SET requires = ? 
-                    WHERE id = ?
-                """, (json.dumps(storylet['requires']), storylet['id']))
+                cursor.execute("UPDATE storylets SET requires = ? WHERE id = ?",
+                               (json.dumps(storylet['requires']), storylet['id']))
                 conn.commit()
                 conn.close()
-            
             fixes_applied['locations_assigned'] += 1
             fixes_applied['modified_storylets'].append(storylet['id'])
-        
-        # Create movement connections between locations
+
+        # Create movement connections among existing locations.
         if fixes_applied['locations_assigned'] > 0:
-            # Reload to get updated location data
             self.load_storylets()
             self.analyze_graph()
-            
-            # Add movement choices to representative storylets
             locations = list(self.locations - {'No Location'})
             for location in locations:
                 storylets_in_location = self.location_storylets[location]
-                
-                if storylets_in_location:
-                    # Use first storylet as representative for movement
-                    representative = storylets_in_location[0]
-                    
-                    # Add movement options to 2-3 other locations
-                    other_locations = [loc for loc in locations if loc != location]
-                    nearby_locations = random.sample(other_locations, 
-                                                   min(3, len(other_locations)))
-                    
-                    for target_location in nearby_locations:
-                        movement_choice = {
-                            "text": f"Travel to {target_location}",
-                            "set": {"location": target_location},
-                            "condition": None
-                        }
-                        representative['choices'].append(movement_choice)
-                        fixes_applied['connections_created'] += 1
-                    
-                    if not dry_run and nearby_locations:
-                        conn = sqlite3.connect(self.db_path)
-                        cursor = conn.cursor()
-                        cursor.execute("""
-                            UPDATE storylets 
-                            SET choices = ? 
-                            WHERE id = ?
-                        """, (json.dumps(representative['choices']), representative['id']))
-                        conn.commit()
-                        conn.close()
-                        
-                        if representative['id'] not in fixes_applied['modified_storylets']:
-                            fixes_applied['modified_storylets'].append(representative['id'])
-        
-        print(f"✅ Assigned {fixes_applied['locations_assigned']} locations")
-        print(f"✅ Created {fixes_applied['connections_created']} movement connections")
+                if not storylets_in_location:
+                    continue
+                representative = storylets_in_location[0]
+                other_locations = [loc for loc in locations if loc != location]
+                nearby_locations = random.sample(other_locations, min(3, len(other_locations)))
+                for target_location in nearby_locations:
+                    representative['choices'].append({
+                        "text": f"Travel to {target_location}",
+                        "set": {"location": target_location},
+                        "condition": None,
+                    })
+                    fixes_applied['connections_created'] += 1
+                if not dry_run and nearby_locations:
+                    conn = sqlite3.connect(self.db_path)
+                    cursor = conn.cursor()
+                    cursor.execute("UPDATE storylets SET choices = ? WHERE id = ?",
+                                   (json.dumps(representative['choices']), representative['id']))
+                    conn.commit()
+                    conn.close()
+                    if representative['id'] not in fixes_applied['modified_storylets']:
+                        fixes_applied['modified_storylets'].append(representative['id'])
+
         return fixes_applied
-    
+
     def smooth_story(self, dry_run: bool = False) -> Dict:
         """
         Main smoothing algorithm - recursively fix story problems.
