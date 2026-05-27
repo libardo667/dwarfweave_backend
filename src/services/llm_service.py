@@ -329,10 +329,9 @@ WORLD VARIABLES TO CREATE (extract from the world description):
 - Create resource/status/relationship variables that matter to this universe
 - Ensure variables connect storylets into a coherent narrative web
 
-EXAMPLE VARIABLE TYPES FOR DIFFERENT WORLDS:
-- Cosmic mysteries: quantum_resonance, void_attunement, stellar_knowledge, dimensional_stability
-- Reality weavers: weaving_skill, reality_threads, cosmic_reputation, harmonic_mastery
-- Ethereal realms: dream_essence, spectral_connections, planar_knowledge, ethereal_power
+Derive every variable and location name from THIS world's description and theme.
+Invent names that belong to this specific world — do not borrow vocabulary from
+other genres or settings.
 
 Return a JSON object with a "storylets" array of EXACTLY {count} storylets:
 {{
