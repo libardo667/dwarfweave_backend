@@ -4,7 +4,7 @@ import os
 import json
 from typing import Any, Dict, List
 
-from .llm_client import ai_available, complete_json, get_llm, parse_storylets
+from .llm_client import ai_available, complete_json, get_llm, parse_storylets, _first_json_value
 
 
 def generate_contextual_storylets(current_vars: Dict[str, Any], n: int = 3) -> List[Dict[str, Any]]:
@@ -281,7 +281,157 @@ def generate_learning_enhanced_storylets(db, current_vars: Dict[str, Any], n: in
     return llm_suggest_storylets(n, themes, enhanced_bible)
 
 
-def generate_world_storylets(description: str, theme: str, player_role: str = "adventurer", 
+# ---------------------------------------------------------------------------
+# World FRAME generation (item 10): the bible as data — lore + laws — not storylets.
+# ---------------------------------------------------------------------------
+
+# Laws the SYSTEM injects into every frame, regardless of what the frame-gen LLM
+# produces. These hold "beyond any one agent's control" — the drunken-cats principle:
+# simple persistent dynamics that compose into outcomes nobody authored. (The engine
+# that *runs* them autonomously is the heartbeat horizon; today the frame carries them
+# and generation honors them as binding context.)
+BASELINE_LAWS: List[Dict[str, Any]] = [
+    {
+        "name": "time_advances",
+        "rule": "Time passes whether or not anyone acts. The world does not wait for a player.",
+        "variable": "tick",
+        "origin": "system",
+    },
+    {
+        "name": "neglect_breeds_decay",
+        "rule": "What is tended holds together; what is left alone drifts toward disorder.",
+        "variable": None,
+        "origin": "system",
+    },
+    {
+        "name": "consequence_compounds",
+        "rule": "Every action leaves a trace in the world state; traces accumulate and later "
+                "situations read them, so small effects compound into outcomes no one authored.",
+        "variable": None,
+        "origin": "system",
+    },
+]
+
+
+def _inject_baseline_laws(frame: Dict[str, Any]) -> Dict[str, Any]:
+    """Guarantee the system laws are present and tag every law's provenance.
+
+    LLM-proposed laws are kept and marked ``origin="authored"``; the system laws are
+    merged in (deduped by name) and win on name collision. This is the code-level
+    enforcement of "some of it is beyond any one agent's control."
+    """
+    authored = []
+    seen = set()
+    for law in (frame.get("laws") or []):
+        if not isinstance(law, dict) or not law.get("name"):
+            continue
+        name = str(law["name"]).strip()
+        if name in seen:
+            continue
+        seen.add(name)
+        law.setdefault("origin", "authored")
+        authored.append(law)
+    # System laws override any authored law that reused their reserved names.
+    merged = [law for law in authored if law["name"] not in {b["name"] for b in BASELINE_LAWS}]
+    merged.extend(dict(b) for b in BASELINE_LAWS)
+    frame["laws"] = merged
+    return frame
+
+
+def _fallback_frame(description: str, theme: str, tone: str) -> Dict[str, Any]:
+    """Deterministic offline frame — enough lore for tests/dev without a network call."""
+    return {
+        "name": (theme or "Unnamed World").title(),
+        "tone": tone,
+        "premise": (description or "").strip()[:280] or f"A {theme} world awaiting its first inhabitants.",
+        "locations": [
+            {"name": "threshold", "blurb": "Where new arrivals first set foot.", "near": []},
+        ],
+        "factions": [],
+        "entities": [],
+        "tensions": [],
+        "laws": [],  # baseline laws are injected by _inject_baseline_laws
+    }
+
+
+def build_frame_prompt(description: str, theme: str, player_role: str,
+                       key_elements: List[str], tone: str) -> str:
+    """Prompt for the world FRAME: the world's bones and physics, NOT storylets."""
+    elements = ", ".join(key_elements) if key_elements else "derive from the description"
+    return f"""You are the worldsmith for an interactive fiction engine. Write the FRAME of a world—its bones and its physics—NOT individual scenes or storylets.
+
+WORLD DESCRIPTION: {description}
+THEME: {theme}
+PLAYER / FIRST ROLE: {player_role}
+KEY ELEMENTS: {elements}
+TONE: {tone}
+
+Produce the world's coherence anchor: the stable reference everything later is authored against. Derive ALL names and vocabulary from THIS world; do not borrow from other genres.
+
+Return a JSON object with EXACTLY these keys:
+{{
+  "name": "the world's name",
+  "tone": "{tone}",
+  "premise": "one paragraph: what this world is and why it's interesting to leave running",
+  "locations": [
+    {{"name": "world_native_place", "blurb": "what it is", "near": ["adjacent_place"]}}
+  ],
+  "factions": [
+    {{"name": "a group", "wants": "their drive", "at_odds_with": "rival group or force"}}
+  ],
+  "entities": [
+    {{"name": "notable NPC / item / force", "kind": "person|item|force", "blurb": "what it is"}}
+  ],
+  "tensions": [
+    "a live pressure in the world that has no settled resolution — the kind of thing stories grow from"
+  ],
+  "laws": [
+    {{"name": "world_native_dynamic", "rule": "a systemic rule that runs mechanically, independent of anyone's intent (e.g. a rising tide, a spreading rot, a debt that compounds)", "variable": "the_world_variable_it_moves"}}
+  ]
+}}
+
+Guidance:
+- 4-8 locations, 2-4 factions, 2-5 entities, 2-4 tensions, 1-3 laws.
+- TENSIONS are narrative pressure (what agents fight over). LAWS are mechanical pressure (what happens regardless of agents). Give both.
+- A good law produces consequences nobody intended when it composes with ordinary actions. Make laws specific to this world's physics, not generic.
+- Do NOT write storylets, scenes, or choices. Only the frame."""
+
+
+def generate_world_frame(description: str, theme: str, player_role: str = "adventurer",
+                         key_elements: List[str] | None = None, tone: str = "adventure") -> Dict[str, Any]:
+    """Generate a world FRAME (bible as data): lore + laws, the anchor generation seeds into.
+
+    Always returns a frame carrying the system baseline laws (injected last), even
+    offline or when the LLM misbehaves — the "beyond any one agent's control" guarantee.
+    """
+    if key_elements is None:
+        key_elements = []
+
+    if not ai_available():
+        return _inject_baseline_laws(_fallback_frame(description, theme, tone))
+
+    try:
+        client, model = get_llm()
+        prompt = build_frame_prompt(description, theme, player_role, key_elements, tone)
+        content = complete_json(
+            client, model,
+            [
+                {"role": "system", "content": "You are an expert worldbuilder. Return only the requested JSON frame."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.7,
+            max_tokens=2000,
+        )
+        parsed = _first_json_value(content)
+        frame = parsed if isinstance(parsed, dict) else _fallback_frame(description, theme, tone)
+    except Exception as e:
+        print(f"Frame generation failed, using fallback: {e}")
+        frame = _fallback_frame(description, theme, tone)
+
+    return _inject_baseline_laws(frame)
+
+
+def generate_world_storylets(description: str, theme: str, player_role: str = "adventurer",
                            key_elements: List[str] | None = None, tone: str = "adventure", 
                            count: int = 15) -> List[Dict[str, Any]]:
     """Generate a complete storylet ecosystem from a world description."""

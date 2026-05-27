@@ -9,9 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from ..database import get_db
-from ..models import Storylet, SessionVars
+from ..models import Storylet, SessionVars, WorldFrame
 from ..models.schemas import SuggestReq, SuggestResp, StoryletIn, GenerateStoryletRequest, WorldDescription
-from ..services.llm_service import llm_suggest_storylets, generate_world_storylets
+from ..services.llm_service import llm_suggest_storylets, generate_world_storylets, generate_world_frame
 from ..services.game_logic import auto_populate_storylets
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
@@ -428,6 +428,58 @@ def generate_targeted_storylets(db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         return {"error": f"Failed to generate targeted storylets: {str(e)}"}
+
+
+def _current_frame_row(db: Session):
+    """The active world frame = the highest-version row, or None if none exists yet."""
+    return db.query(WorldFrame).order_by(WorldFrame.version.desc()).first()
+
+
+@router.get("/frame")
+def get_current_frame(db: Session = Depends(get_db)):
+    """Return the current (latest) world frame, or null if the world has no frame yet."""
+    row = _current_frame_row(db)
+    if not row:
+        return {"frame": None, "version": 0}
+    return {"frame": row.frame, "version": row.version, "name": row.name, "origin": row.origin}
+
+
+@router.post("/generate-frame")
+def generate_frame(world_description: WorldDescription, db: Session = Depends(get_db)):
+    """Generate (or iterate) the world FRAME — the bible as data (item 10).
+
+    The frame is the coherence anchor generation seeds INTO; this does NOT create
+    storylets. Non-destructive and versioned: each call writes a NEW row at the next
+    version and keeps prior frames as history, so a world's frame can iterate as it
+    updates. The frame carries system-injected laws beyond the LLM's control.
+    """
+    try:
+        frame = generate_world_frame(
+            description=world_description.description,
+            theme=world_description.theme,
+            player_role=world_description.player_role,
+            key_elements=world_description.key_elements,
+            tone=world_description.tone,
+        )
+        current = _current_frame_row(db)
+        next_version = (current.version + 1) if current else 1
+        row = WorldFrame(
+            name=(frame.get("name") or world_description.theme or "Unnamed World"),
+            version=next_version,
+            frame=frame,
+            origin="grounded",
+        )
+        db.add(row)
+        db.commit()
+        return {
+            "success": True,
+            "version": next_version,
+            "name": row.name,
+            "frame": frame,
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Frame generation failed: {str(e)}")
 
 
 @router.post("/generate-world")
