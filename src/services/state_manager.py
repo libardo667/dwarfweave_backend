@@ -404,15 +404,9 @@ class AdvancedStateManager:
                     else:
                         # Location requirement not met
                         return False
-                elif isinstance(requirements, dict):
-                    if not self._check_numeric_condition(var_value, requirements):
-                        return False
                 else:
-                    # For simple numeric comparisons, treat as >= comparison
-                    if isinstance(requirements, (int, float)) and isinstance(var_value, (int, float)):
-                        if var_value < requirements:
-                            return False
-                    elif var_value != requirements:
+                    from .conditions import check_scalar
+                    if not check_scalar(var_value, requirements):
                         return False
                     
         return True

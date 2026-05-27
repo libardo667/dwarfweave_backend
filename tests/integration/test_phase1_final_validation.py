@@ -50,11 +50,13 @@ def test_all_fixes():
     # === FIX 4: Simple numeric condition evaluation ===
     print("\n✅ Fix 4: Simple numeric condition evaluation")
     manager.set_variable("gold", 100)
-    assert manager.evaluate_condition({"gold": 50}) is True  # 100 >= 50
-    assert manager.evaluate_condition({"gold": 150}) is False  # 100 < 150
-    assert manager.evaluate_condition({"gold": 100}) is True  # 100 >= 100 (exact)
-    passed_tests.append("Simple numeric conditions")
-    print("   ✅ Simple numeric conditions work as >= comparisons")
+    assert manager.evaluate_condition({"gold": 100}) is True   # bare value -> exact match
+    assert manager.evaluate_condition({"gold": 50}) is False   # 100 != 50 (bare is equality, not >=)
+    assert manager.evaluate_condition({"gold": 150}) is False  # 100 != 150
+    assert manager.evaluate_condition({"gold": {"gte": 50}}) is True   # explicit threshold
+    assert manager.evaluate_condition({"gold": {"lt": 150}}) is True
+    passed_tests.append("Requirement evaluation semantics")
+    print("   ✅ Bare values are equality; thresholds use explicit operators")
     
     # === FIX 5: Contextual variables without underscores ===
     print("\n✅ Fix 5: Contextual variables format")

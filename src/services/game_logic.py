@@ -19,35 +19,13 @@ def render(template: str, vars: Dict[str, Any]) -> str:
 
 
 def meets_requirements(vars: Dict[str, Any], req: Dict[str, Any]) -> bool:
+    """Deprecated shim -> delegates to the canonical evaluator in `conditions`.
+
+    Retained for callers using this name; remove once
+    `conditions.evaluate_requirements` is used directly everywhere (item 01).
     """
-    Check if current variables meet storylet requirements.
-    
-    Supports:
-      - Plain equality: {'location': 'mineshaft'}
-      - Booleans: {'has_pickaxe': True}
-      - Numeric comparisons: {'danger': {'lte': 2}} (supports gte, gt, lte, lt, eq, ne)
-    """
-    for key, need in (req or {}).items():
-        have = vars.get(key, None)
-        if isinstance(need, dict):
-            # numeric or comparable operators
-            for op, val in need.items():
-                if op == 'gte' and not (have is not None and have >= val): 
-                    return False
-                if op == 'gt'  and not (have is not None and have > val): 
-                    return False
-                if op == 'lte' and not (have is not None and have <= val): 
-                    return False
-                if op == 'lt'  and not (have is not None and have < val): 
-                    return False
-                if op == 'eq'  and not (have == val): 
-                    return False
-                if op == 'ne'  and not (have != val): 
-                    return False
-        else:
-            if have != need:
-                return False
-    return True
+    from .conditions import evaluate_requirements
+    return evaluate_requirements(vars, req)
 
 
 def pick_storylet(db: Session, vars: Dict[str, Any]) -> Optional[Storylet]:
