@@ -184,6 +184,10 @@ def debug_game_state(db: Session = Depends(get_db)):
             "session_variables": session_dict,
             "total_storylets": total_storylets,
             "available_storylets": len(all_storylets),
+            "origin_breakdown": {
+                o: sum(1 for s in all_storylets if s.origin == o)
+                for o in ("grounded", "inferred", "assumed")
+            },
             "sample_storylet_titles": [s.title for s in all_storylets[:5]]  # Show first 5
         }
     except Exception as e:

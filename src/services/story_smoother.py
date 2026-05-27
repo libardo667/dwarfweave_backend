@@ -520,14 +520,15 @@ class StorySmoother:
         cursor = conn.cursor()
         
         cursor.execute("""
-            INSERT INTO storylets (title, text_template, requires, choices, weight)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO storylets (title, text_template, requires, choices, weight, origin)
+            VALUES (?, ?, ?, ?, ?, ?)
         """, (
             storylet['title'],
             storylet['text_template'],
             json.dumps(storylet['requires']),
             json.dumps(storylet['choices']),
-            storylet['weight']
+            storylet['weight'],
+            storylet.get('origin', 'inferred')
         ))
         
         # Get the ID of the newly inserted storylet

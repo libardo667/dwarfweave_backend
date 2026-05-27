@@ -85,6 +85,8 @@ def _seed_rows(session: Session) -> None:
         ),
     ]
 
+    for s in seeds:
+        s.origin = "grounded"  # hand-authored seeds are grounded (item 02)
     session.add_all(seeds)
     session.flush()
     

@@ -30,7 +30,8 @@ class StoryletIn(BaseModel):
     requires: Dict[str, Any] = Field(default_factory=dict)
     choices: List[Dict[str, Any]] = Field(default_factory=list)
     weight: float = 1.0
-    
+    origin: str = "assumed"  # grounded | inferred | assumed (provenance, item 02)
+
     # Accept both {"label", "set"} and {"text", "set_vars"}; normalize to label/set
     @field_validator('choices', mode='before')
     @classmethod

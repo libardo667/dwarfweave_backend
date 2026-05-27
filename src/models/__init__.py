@@ -18,6 +18,7 @@ class Storylet(Base):
     weight = Column(Float, default=1.0)
     spatial_x = Column(Integer, nullable=True)  # X coordinate for spatial navigation
     spatial_y = Column(Integer, nullable=True)  # Y coordinate for spatial navigation
+    origin = Column(String(16), nullable=False, server_default="assumed")  # provenance: grounded | inferred | assumed (item 02)
 
 
 class SessionVars(Base):

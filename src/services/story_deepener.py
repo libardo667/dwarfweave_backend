@@ -410,14 +410,15 @@ class StoryDeepener:
             new_storylet_ids = []
             for bridge in bridge_storylets:
                 cursor.execute("""
-                    INSERT INTO storylets (title, text_template, requires, choices, weight)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO storylets (title, text_template, requires, choices, weight, origin)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 """, (
                     bridge['title'],
                     bridge['text_template'],
                     json.dumps(bridge['requires']),
                     json.dumps(bridge['choices']),
-                    bridge['weight']
+                    bridge['weight'],
+                    bridge.get('origin', 'inferred')
                 ))
                 # Collect the new storylet ID
                 new_id = cursor.lastrowid
