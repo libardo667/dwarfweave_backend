@@ -164,3 +164,8 @@ logs/
 .temp/
 
 notes/
+reports/
+
+# Agentic operating layer (private, local-only)
+improvements/
+AGENTS.md

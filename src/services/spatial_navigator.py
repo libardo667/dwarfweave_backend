@@ -358,36 +358,6 @@ class SpatialNavigator:
         """), {"x": position.x, "y": position.y, "id": storylet_id})
         self.db.commit()
     
-    def _get_connected_storylets(self, storylet_id: int, storylets: List[Dict], storylet_map: Dict[str, int]) -> List[int]:
-        """Get storylets that are connected to the given storylet through choices."""
-        connected = []
-        
-        # Find the storylet data
-        storylet_data = None
-        for s in storylets:
-            if storylet_map.get(s['title']) == storylet_id:
-                storylet_data = s
-                break
-        
-        if not storylet_data:
-            return connected
-        
-        # Check choices for location changes
-        for choice in storylet_data.get('choices', []):
-            # Support both normalized 'set' and legacy 'set_vars' keys
-            choice_set = choice.get('set') or choice.get('set_vars') or {}
-            if 'location' in choice_set:
-                target_location = choice_set['location']
-                
-                # Find storylets that require this location
-                for s in storylets:
-                    if s.get('requires', {}).get('location') == target_location:
-                        target_id = storylet_map.get(s['title'])
-                        if target_id and target_id not in connected:
-                            connected.append(target_id)
-        
-        return connected
-    
     def get_directional_navigation(self, current_storylet_id: int) -> Dict[str, Optional[Dict]]:
         """Get available navigation options in 8 directions from current position."""
         if current_storylet_id not in self.storylet_positions:

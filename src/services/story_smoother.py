@@ -19,15 +19,8 @@ class StorySmoother:
     """
     
     def __init__(self, db_path: str = 'worldweaver.db'):
-        # Prefer explicit arg, else env var, else pick test DB during pytest, else default
-        if db_path and db_path != 'worldweaver.db':
-            self.db_path = db_path
-        else:
-            env_db = os.getenv('DW_DB_PATH')
-            if env_db:
-                self.db_path = env_db
-            else:
-                self.db_path = 'test_database.db' if os.getenv('PYTEST_CURRENT_TEST') else 'worldweaver.db'
+        from .db_path import resolve_db_path
+        self.db_path = resolve_db_path(db_path)
         self.storylets = []
         self.locations = set()
         self.location_storylets = defaultdict(list)
@@ -559,28 +552,3 @@ class StorySmoother:
                 db_session.close()
             except Exception as e:
                 print(f"⚠️ Warning: Could not auto-assign coordinates to storylet '{storylet['title']}': {e}")
-
-
-def main():
-    """Run the story smoothing algorithm."""
-    smoother = StorySmoother()
-    
-    print("🔍 Running story analysis...")
-    fixes = smoother.smooth_story(dry_run=False)
-    
-    print("\n📊 SMOOTHING RESULTS:")
-    print("=" * 50)
-    print(f"Spatial locations assigned: {fixes['spatial_locations_assigned']}")
-    print(f"Spatial connections created: {fixes['spatial_connections_created']}")
-    print(f"Exit choices added: {fixes['exit_choices_added']}")
-    print(f"Variable storylets created: {fixes['variable_storylets_created']}")
-    print(f"Bidirectional connections: {fixes['bidirectional_connections']}")
-    print(f"Storylets modified: {len(set(fixes['modified_storylets']))}")
-    
-    print("\n🗺️ Running updated map analysis...")
-    import subprocess
-    subprocess.run(['python', './db/storylet_map.py'])
-
-
-if __name__ == "__main__":
-    main()

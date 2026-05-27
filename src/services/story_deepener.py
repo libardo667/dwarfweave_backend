@@ -19,14 +19,8 @@ class StoryDeepener:
     """
     
     def __init__(self, db_path: str = 'worldweaver.db'):
-        if db_path and db_path != 'worldweaver.db':
-            self.db_path = db_path
-        else:
-            env_db = os.getenv('DW_DB_PATH')
-            if env_db:
-                self.db_path = env_db
-            else:
-                self.db_path = 'test_database.db' if os.getenv('PYTEST_CURRENT_TEST') else 'worldweaver.db'
+        from .db_path import resolve_db_path
+        self.db_path = resolve_db_path(db_path)
         self.storylets = []
         self.choice_transitions = []  # (from_storylet, choice, to_storylet)
         self.weak_transitions = []    # Transitions that need deepening
@@ -459,24 +453,3 @@ class StoryDeepener:
         print(f"🎉 Story deepening complete! Made {total_improvements} improvements")
         
         return results
-
-
-def main():
-    """Run the story deepening algorithm."""
-    deepener = StoryDeepener()
-    
-    print("🕳️  Running story deepening analysis...")
-    results = deepener.deepen_story()
-    
-    print("\n📊 DEEPENING RESULTS:")
-    print("=" * 50)
-    print(f"Bridge storylets created: {results['bridge_storylets_created']}")
-    print(f"Choice previews added: {results['choice_previews_added']}")
-    
-    print("\n🗺️  Generating updated map...")
-    import subprocess
-    subprocess.run(['python', './db/storylet_map.py'])
-
-
-if __name__ == "__main__":
-    main()
