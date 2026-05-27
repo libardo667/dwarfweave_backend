@@ -196,21 +196,6 @@ def update_environment(session_id: str, changes: Dict[str, Any],
     }
 
 
-# Seed test DB if empty to support spatial tests
-def _seed_if_test_db():
-    try:
-        import os
-        if os.getenv('DW_DB_PATH') == 'test_database.db':
-            db = SessionLocal()
-            from ..services.seed_data import seed_if_empty
-            seed_if_empty(db)
-            db.close()
-    except Exception:
-        pass
-
-_seed_if_test_db()
-
-
 @router.post('/cleanup-sessions')
 def cleanup_old_sessions(db: Session = Depends(get_db)):
     """Clean up sessions older than 24 hours."""

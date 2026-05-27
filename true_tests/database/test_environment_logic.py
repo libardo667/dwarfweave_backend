@@ -159,7 +159,7 @@ class TestDatabaseEnvironmentLogic:
         test_scenarios = [
             # (DW_DB_PATH, PYTEST_CURRENT_TEST, expected_db_file)
             ("custom.db", None, "custom.db"),
-            ("", "test_file", "worldweaver.db"),  # Empty DW_DB_PATH
+            ("", "test_file", "test_database.db"),  # Empty DW_DB_PATH -> falsy, pytest active
             (None, "test_file", "test_database.db"),  # No DW_DB_PATH, pytest active
             (None, None, "worldweaver.db"),  # Production scenario
             ("relative/path/db.sqlite", None, "relative/path/db.sqlite"),

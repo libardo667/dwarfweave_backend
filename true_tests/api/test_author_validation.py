@@ -36,20 +36,20 @@ class TestAuthorInputValidation:
         # Test n too small
         with pytest.raises(ValueError) as exc_info:
             SuggestReq(n=0)
-        assert "ensure this value is greater than or equal to 1" in str(exc_info.value)
+        assert "greater than or equal to 1" in str(exc_info.value)
         
         with pytest.raises(ValueError) as exc_info:
             SuggestReq(n=-5)
-        assert "ensure this value is greater than or equal to 1" in str(exc_info.value)
+        assert "greater than or equal to 1" in str(exc_info.value)
         
         # Test n too large
         with pytest.raises(ValueError) as exc_info:
             SuggestReq(n=25)
-        assert "ensure this value is less than or equal to 20" in str(exc_info.value)
+        assert "less than or equal to 20" in str(exc_info.value)
         
         with pytest.raises(ValueError) as exc_info:
             SuggestReq(n=100)
-        assert "ensure this value is less than or equal to 20" in str(exc_info.value)
+        assert "less than or equal to 20" in str(exc_info.value)
     
     def test_generate_storylet_request_valid_count(self):
         """Test GenerateStoryletRequest accepts valid count values."""
@@ -68,20 +68,20 @@ class TestAuthorInputValidation:
         # Test count too small
         with pytest.raises(ValueError) as exc_info:
             GenerateStoryletRequest(count=0)
-        assert "ensure this value is greater than or equal to 1" in str(exc_info.value)
+        assert "greater than or equal to 1" in str(exc_info.value)
         
         with pytest.raises(ValueError) as exc_info:
             GenerateStoryletRequest(count=-3)
-        assert "ensure this value is greater than or equal to 1" in str(exc_info.value)
+        assert "greater than or equal to 1" in str(exc_info.value)
         
         # Test count too large
         with pytest.raises(ValueError) as exc_info:
             GenerateStoryletRequest(count=20)
-        assert "ensure this value is less than or equal to 15" in str(exc_info.value)
+        assert "less than or equal to 15" in str(exc_info.value)
         
         with pytest.raises(ValueError) as exc_info:
             GenerateStoryletRequest(count=50)
-        assert "ensure this value is less than or equal to 15" in str(exc_info.value)
+        assert "less than or equal to 15" in str(exc_info.value)
     
     def test_world_description_storylet_count_validation(self):
         """Test WorldDescription storylet_count validation (already implemented)."""
@@ -100,7 +100,7 @@ class TestAuthorInputValidation:
                 theme="fantasy", 
                 storylet_count=3  # Too small
             )
-        assert "ensure this value is greater than or equal to 5" in str(exc_info.value)
+        assert "greater than or equal to 5" in str(exc_info.value)
         
         with pytest.raises(ValueError) as exc_info:
             WorldDescription(
@@ -108,7 +108,7 @@ class TestAuthorInputValidation:
                 theme="fantasy",
                 storylet_count=75  # Too large
             )
-        assert "ensure this value is less than or equal to 50" in str(exc_info.value)
+        assert "less than or equal to 50" in str(exc_info.value)
     
     def test_populate_endpoint_target_count_validation(self):
         """Test /author/populate endpoint validates target_count parameter using real server."""
