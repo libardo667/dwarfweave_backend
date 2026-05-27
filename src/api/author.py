@@ -57,61 +57,63 @@ def author_suggest(payload: SuggestReq):
 
 
 @router.post('/commit')
-def author_commit(payload: SuggestResp, db: Session = Depends(get_db)):
-    """Commit suggested storylets to the database."""
+def author_commit(payload: SuggestResp, improve: bool = False, db: Session = Depends(get_db)):
+    """Commit suggested storylets.
+
+    Each storylet is added inside its own SAVEPOINT, so a duplicate/IntegrityError
+    skips only that storylet instead of rolling back the whole batch. Auto-improvement
+    is opt-in (``improve=True``) and out-of-band — the default commit stays fast and
+    deterministic (item 06).
+    """
     count = 0
+    committed_titles = []
     for s in payload.storylets:
-        # Normalize title for comparison
         normalized = (s.title or "").strip()
         exists = db.query(Storylet).filter(func.lower(Storylet.title) == func.lower(normalized)).first()
         if exists:
-            # Skip duplicate
-            continue
-        row = Storylet(
-            title=normalized,
-            text_template=s.text_template,
-            requires=s.requires,
-            choices=s.choices,
-            weight=s.weight
-        )
-        db.add(row)
+            continue  # skip duplicate
         try:
-            db.flush()
+            with db.begin_nested():
+                db.add(Storylet(
+                    title=normalized,
+                    text_template=s.text_template,
+                    requires=s.requires,
+                    choices=s.choices,
+                    weight=s.weight,
+                ))
         except IntegrityError:
-            # Another thread/process inserted a row with same title; skip it
-            db.rollback()
+            # Another thread/process inserted the same title; only this savepoint unwinds.
             continue
         count += 1
+        committed_titles.append(normalized)
     db.commit()
-    
-    # Auto-assign spatial coordinates to newly committed storylets
-    if count > 0:
+
+    # Auto-assign spatial coordinates to the newly committed storylets (lightweight).
+    if committed_titles:
         from ..services.spatial_navigator import SpatialNavigator
-        new_storylet_ids = []
-        for storylet in db.query(Storylet).filter(Storylet.title.in_([s.title for s in payload.storylets])):
-            new_storylet_ids.append(storylet.id)
-        
-        updates = SpatialNavigator.auto_assign_coordinates(db, new_storylet_ids)
-        if updates > 0:
-            print(f"📍 Auto-assigned coordinates to {updates} committed storylets")
-    
-    # Auto-improve storylets after adding new ones
-    from ..services.auto_improvement import auto_improve_storylets, should_run_auto_improvement, get_improvement_summary
-    
-    if should_run_auto_improvement(count, "author-commit"):
-        improvement_results = auto_improve_storylets(
-            db=db, 
-            trigger=f"author-commit ({count} storylets)",
-            run_smoothing=True,
-            run_deepening=True
+        new_storylet_ids = [
+            st.id for st in db.query(Storylet).filter(Storylet.title.in_(committed_titles))
+        ]
+        SpatialNavigator.auto_assign_coordinates(db, new_storylet_ids)
+
+    # Auto-improvement stays OFF the default commit path; opt in explicitly.
+    if improve:
+        from ..services.auto_improvement import (
+            auto_improve_storylets, should_run_auto_improvement, get_improvement_summary,
         )
-        
-        return {
-            "added": count,
-            "auto_improvements": get_improvement_summary(improvement_results),
-            "improvement_details": improvement_results
-        }
-    
+        if should_run_auto_improvement(count, "author-commit"):
+            improvement_results = auto_improve_storylets(
+                db=db,
+                trigger=f"author-commit ({count} storylets)",
+                run_smoothing=True,
+                run_deepening=True,
+            )
+            return {
+                "added": count,
+                "auto_improvements": get_improvement_summary(improvement_results),
+                "improvement_details": improvement_results,
+            }
+
     return {"added": count}
 
 

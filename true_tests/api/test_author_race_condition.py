@@ -14,7 +14,6 @@ from src.database import SessionLocal
 from src.models import Storylet
 
 
-@pytest.mark.xfail(reason="author_commit couples to auto-improvement; per-item rollback unwinds prior adds (item 06)", strict=False)
 def test_author_commit_handles_integrityerror(monkeypatch):
     session = SessionLocal()
     try:
