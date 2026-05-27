@@ -13,7 +13,7 @@ import os
 db_file = os.environ.get("DW_DB_PATH")
 if not db_file:
     # If running under pytest, prefer the test DB by default
-    db_file = 'test_database.db' if os.environ.get('PYTEST_CURRENT_TEST') else 'worldweaver.db'
+    db_file = 'test_database.db' if os.environ.get('PYTEST_CURRENT_TEST') else 'dwarfweave.db'
 
 engine = create_engine(f'sqlite:///{db_file}', future=True, connect_args={"check_same_thread": False})
 SessionLocal = scoped_session(sessionmaker(bind=engine, autoflush=False, autocommit=False))

@@ -18,7 +18,7 @@ class StoryDeepener:
     between storylets to create a more engaging player experience.
     """
     
-    def __init__(self, db_path: str = 'worldweaver.db'):
+    def __init__(self, db_path: str = 'dwarfweave.db'):
         from .db_path import resolve_db_path
         self.db_path = resolve_db_path(db_path)
         self.storylets = []

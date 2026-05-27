@@ -54,8 +54,8 @@ class TestDatabaseEnvironmentLogic:
         assert "test_database.db" in str(engine.url)
     
     @patch.dict(os.environ, {}, clear=True)
-    def test_production_environment_uses_worldweaver_db(self):
-        """Test that production environment defaults to worldweaver.db."""
+    def test_production_environment_uses_default_db(self):
+        """Test that production environment defaults to dwarfweave.db."""
         # Clear both DW_DB_PATH and PYTEST_CURRENT_TEST
         env_copy = os.environ.copy()
         env_copy.pop("DW_DB_PATH", None)
@@ -64,8 +64,8 @@ class TestDatabaseEnvironmentLogic:
         with patch.dict(os.environ, env_copy, clear=True):
             from src.database import db_file, engine
             
-            assert db_file == "worldweaver.db"
-            assert "worldweaver.db" in str(engine.url)
+            assert db_file == "dwarfweave.db"
+            assert "dwarfweave.db" in str(engine.url)
     
     @patch.dict(os.environ, {"DW_DB_PATH": "priority_test.db", "PYTEST_CURRENT_TEST": "test_something"}, clear=False)
     def test_dw_db_path_takes_priority_over_pytest(self):
@@ -86,8 +86,8 @@ class TestDatabaseEnvironmentLogic:
         with patch.dict(os.environ, env_copy, clear=True):
             from src.database import db_file, engine
             
-            assert db_file == "worldweaver.db"
-            assert "worldweaver.db" in str(engine.url)
+            assert db_file == "dwarfweave.db"
+            assert "dwarfweave.db" in str(engine.url)
     
     def test_database_engine_configuration(self):
         """Test that database engine is configured correctly regardless of filename."""
@@ -161,7 +161,7 @@ class TestDatabaseEnvironmentLogic:
             ("custom.db", None, "custom.db"),
             ("", "test_file", "test_database.db"),  # Empty DW_DB_PATH -> falsy, pytest active
             (None, "test_file", "test_database.db"),  # No DW_DB_PATH, pytest active
-            (None, None, "worldweaver.db"),  # Production scenario
+            (None, None, "dwarfweave.db"),  # Production scenario
             ("relative/path/db.sqlite", None, "relative/path/db.sqlite"),
             ("/absolute/path/db.sqlite", "test", "/absolute/path/db.sqlite"),
         ]
