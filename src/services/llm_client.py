@@ -6,7 +6,9 @@ models through one account. Falls back to direct OpenAI when only ``OPENAI_API_K
 is set. This is the single place that decides provider / model / key.
 """
 
+import json
 import os
+import re
 from functools import lru_cache
 from typing import Optional, Tuple
 
@@ -73,3 +75,78 @@ def get_llm(settings: Optional[LLMSettings] = None) -> Tuple[Optional[object], s
         return OpenAI(api_key=s.openai_api_key), s.llm_model.split("/", 1)[-1]
 
     return None, s.llm_model
+
+
+def _first_json_value(s: str):
+    """Best-effort: parse ``s`` as JSON, else the first balanced object/array in it."""
+    s = s.strip()
+    try:
+        return json.loads(s)
+    except Exception:
+        pass
+    start = next((i for i, ch in enumerate(s) if ch in "[{"), None)
+    if start is None:
+        return None
+    closer = "]" if s[start] == "[" else "}"
+    end = s.rfind(closer)
+    if end <= start:
+        return None
+    candidate = s[start:end + 1]
+    try:
+        return json.loads(candidate)
+    except Exception:
+        cleaned = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", candidate)
+        try:
+            return json.loads(cleaned)
+        except Exception:
+            return None
+
+
+def parse_storylets(text: str) -> list:
+    """Tolerantly extract a list of storylet dicts from an LLM response.
+
+    Handles ```` ```json ```` fences, a top-level ``{"storylets": [...]}`` object, a
+    bare ``[...]`` array, or a single storylet object. Returns ``[]`` when nothing
+    parses (callers fall back to local stubs).
+    """
+    if not text:
+        return []
+    s = text.strip()
+    fenced = re.search(r"```(?:json)?\s*(.*?)```", s, re.DOTALL)
+    if fenced:
+        s = fenced.group(1).strip()
+    value = _first_json_value(s)
+    if isinstance(value, list):
+        return [x for x in value if isinstance(x, dict)]
+    if isinstance(value, dict):
+        if isinstance(value.get("storylets"), list):
+            return [x for x in value["storylets"] if isinstance(x, dict)]
+        if "title" in value:  # a single storylet object
+            return [value]
+    return []
+
+
+def complete_json(client, model, messages, *, temperature: float = 0.7, max_tokens: int = 2000) -> str:
+    """Chat completion requesting a JSON response.
+
+    Retries once without ``response_format`` for providers/models that reject it,
+    so the tolerant parser is always the safety net. Returns the raw content string.
+    """
+    try:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            response_format={"type": "json_object"},
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+    except Exception as e:
+        if "response_format" not in str(e).lower():
+            raise
+        resp = client.chat.completions.create(
+            model=model,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+    return resp.choices[0].message.content or ""

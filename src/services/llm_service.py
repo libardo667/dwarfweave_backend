@@ -4,7 +4,7 @@ import os
 import json
 from typing import Any, Dict, List
 
-from .llm_client import ai_available, get_llm
+from .llm_client import ai_available, complete_json, get_llm, parse_storylets
 
 
 def generate_contextual_storylets(current_vars: Dict[str, Any], n: int = 3) -> List[Dict[str, Any]]:
@@ -125,20 +125,16 @@ def llm_suggest_storylets(n: int, themes: List[str], bible: Dict[str, Any]) -> L
         "requirements": "Each storylet should address identified gaps while maintaining narrative quality"
     }
 
-    response = client.chat.completions.create(
-        model=model,
-        response_format={"type": "json_object"},
-        messages=[
+    content = complete_json(
+        client, model,
+        [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": json.dumps(user_prompt, indent=2)},
         ],
         temperature=0.7,
-        # Keep responses smaller in non-production contexts
-        max_tokens=1000 if os.getenv("DW_FAST_TEST") == "1" else 2500,
+        max_tokens=2500,
     )
-    
-    data = json.loads(response.choices[0].message.content or "{}")
-    return data.get("storylets", [])
+    return parse_storylets(content)
 
 
 def build_feedback_aware_prompt(bible: Dict[str, Any]) -> str:
@@ -338,68 +334,37 @@ EXAMPLE VARIABLE TYPES FOR DIFFERENT WORLDS:
 - Reality weavers: weaving_skill, reality_threads, cosmic_reputation, harmonic_mastery
 - Ethereal realms: dream_essence, spectral_connections, planar_knowledge, ethereal_power
 
-Return EXACTLY {count} storylets in this JSON format:
-[
-  {{
-    "title": "Engaging Title That Fits The World",
-    "text": "Immersive story text that brings the world to life. Use {{variable_name}} for dynamic content.",
-    "choices": [
-      {{"label": "Choice 1", "set": {{"variable": "value"}}}},
-      {{"label": "Choice 2", "set": {{"other_var": "value"}}}}
-    ],
-    "requires": {{"location": "starting_area_name"}},
-    "weight": 1.0
-  }}
-]
+Return a JSON object with a "storylets" array of EXACTLY {count} storylets:
+{{
+  "storylets": [
+    {{
+      "title": "Engaging Title That Fits The World",
+      "text": "Immersive story text that brings the world to life. Use {{variable_name}} for dynamic content.",
+      "choices": [
+        {{"label": "Choice 1", "set": {{"variable": "value"}}}},
+        {{"label": "Choice 2", "set": {{"other_var": "value"}}}}
+      ],
+      "requires": {{"location": "starting_area_name"}},
+      "weight": 1.0
+    }}
+  ]
+}}
 
 Focus on creating an interconnected web of storylets where choices in one storylet unlock or influence others. Make the world feel alive and responsive to player choices."""
 
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
+        content = complete_json(
+            client, model,
+            [
                 {"role": "system", "content": "You are an expert interactive fiction world builder. Create interconnected storylets that form a cohesive narrative ecosystem."},
-                {"role": "user", "content": world_prompt}
+                {"role": "user", "content": world_prompt},
             ],
-            temperature=0.8,  # More creative for world building
-            max_tokens=4000
+            temperature=0.8,
+            max_tokens=4000,
         )
-        
-        response_text = (response.choices[0].message.content or "").strip()
-        
-        # Debug: Print the raw response to understand what's happening
-        print(f"🔍 DEBUG: Raw response length: {len(response_text)}")
-        print(f"🔍 DEBUG: Full response: {response_text}")
-        
-        # Extract JSON from response
-        json_start = response_text.find('[')
-        json_end = response_text.rfind(']') + 1
-        
-        if json_start == -1 or json_end == 0:
-            print(f"❌ No JSON array brackets found in response")
-            raise ValueError("No JSON array found in response")
-        
-        json_text = response_text[json_start:json_end]
-        
-        # Debug: Print the JSON text to see what's causing the parsing error
-        print(f"🔍 DEBUG: Attempting to parse JSON (length: {len(json_text)})")
-        print(f"🔍 DEBUG: First 200 chars: {json_text[:200]}")
-        
-        try:
-            storylets = json.loads(json_text)
-        except json.JSONDecodeError as e:
-            print(f"❌ JSON Decode Error: {e}")
-            print(f"🔍 Error position: {e.pos}")
-            print(f"🔍 Context around error: {json_text[max(0, e.pos-50):e.pos+50]}")
-            
-            # Try to clean common JSON issues
-            cleaned_json = json_text.replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
-            # Remove any control characters
-            import re
-            cleaned_json = re.sub(r'[\x00-\x1f\x7f-\x9f]', '', cleaned_json)
-            
-            print(f"🔧 Attempting to parse cleaned JSON...")
-            storylets = json.loads(cleaned_json)
-        
+        storylets = parse_storylets(content)
+        if not storylets:
+            raise ValueError("No storylets parsed from world generation response")
+
         # Validate and normalize the storylets
         normalized_storylets = []
         for storylet in storylets:
@@ -499,33 +464,19 @@ Return EXACTLY this JSON format:
 
 Make this feel like a natural, immersive beginning to THIS specific world, not a generic adventure start."""
 
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
+        content = complete_json(
+            client, model,
+            [
                 {"role": "system", "content": "You are an expert at creating immersive, world-specific story openings that perfectly match the generated content."},
-                {"role": "user", "content": starting_prompt}
+                {"role": "user", "content": starting_prompt},
             ],
             temperature=0.7,
-            max_tokens=800
+            max_tokens=800,
         )
-        
-        response_text = (response.choices[0].message.content or "").strip()
-        
-        # Debug: Print the raw response to understand what's happening
-        print(f"🔍 DEBUG Starting Storylet: Raw response length: {len(response_text)}")
-        print(f"🔍 DEBUG Starting Storylet: Full response: {response_text}")
-        
-        # Extract JSON from response
-        json_start = response_text.find('{')
-        json_end = response_text.rfind('}') + 1
-        
-        if json_start == -1 or json_end == 0:
-            print(f"❌ No JSON object brackets found in starting storylet response")
-            raise ValueError("No JSON found in starting storylet response")
-            raise ValueError("No JSON found in starting storylet response")
-        
-        json_text = response_text[json_start:json_end]
-        starting_data = json.loads(json_text)
+        parsed = parse_storylets(content)
+        if not parsed:
+            raise ValueError("No starting storylet parsed from response")
+        starting_data = parsed[0]
         
         # Validate and normalize
         normalized_starting = {
