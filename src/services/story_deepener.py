@@ -174,11 +174,13 @@ class StoryDeepener:
     def _call_llm(self, prompt: str) -> str:
         """Make a call to the OpenAI API."""
         try:
-            from openai import OpenAI
-            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            from .llm_client import ai_available, get_llm
+            if not ai_available():
+                return '{"title": "Generated Content", "text": "Content generated."}'
+            client, model = get_llm()
             
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model=model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,
                 max_tokens=500

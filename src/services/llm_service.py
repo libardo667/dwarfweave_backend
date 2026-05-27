@@ -4,6 +4,8 @@ import os
 import json
 from typing import Any, Dict, List
 
+from .llm_client import ai_available, get_llm
+
 
 def generate_contextual_storylets(current_vars: Dict[str, Any], n: int = 3) -> List[Dict[str, Any]]:
     """
@@ -83,34 +85,8 @@ def llm_suggest_storylets(n: int, themes: List[str], bible: Dict[str, Any]) -> L
     Returns:
         List of storylet dictionaries
     """
-    # Fast mode or disabled AI: always return local fallbacks to keep tests and dev snappy
-    if os.getenv("DW_FAST_TEST") == "1" or os.getenv("DW_DISABLE_AI") == "1" or os.getenv("PYTEST_CURRENT_TEST"):
-        base = [
-            {
-                "title": "Quantum Whispers",
-                "text_template": "\U0001F30C {name} senses subtle vibrations in the cosmic frequencies. Resonance: {resonance}.",
-                "requires": {"resonance": {"lte": 1}},
-                "choices": [
-                    {"label": "Attune deeper", "set": {"resonance": {"inc": 1}}},
-                    {"label": "Stabilize flow",    "set": {"resonance": {"dec": 1}}},
-                ],
-                "weight": 1.2,
-            },
-            {
-                "title": "Stellar Resonance",
-                "text_template": "✨ Crystalline formations pulse with cosmic energy, singing in harmonic frequencies.",
-                "requires": {"has_crystal": True},
-                "choices": [
-                    {"label": "Attune to frequencies", "set": {"energy": {"inc": 1}}},
-                    {"label": "Preserve the harmony",     "set": {}},
-                ],
-                "weight": 1.0,
-            },
-        ]
-        return base[:max(1, int(n or 1))]
-
-    if not os.getenv("OPENAI_API_KEY"):
-        # Fallback storylets when no API key is available
+    # Offline / no-key: local fallback storylets keep tests and dev snappy
+    if not ai_available():
         base = [
             {
                 "title": "Quantum Whispers",
@@ -118,7 +94,7 @@ def llm_suggest_storylets(n: int, themes: List[str], bible: Dict[str, Any]) -> L
                 "requires": {"resonance": {"lte": 1}},
                 "choices": [
                     {"label": "Attune deeper", "set": {"resonance": {"inc": 1}}},
-                    {"label": "Stabilize flow",    "set": {"resonance": {"dec": 1}}},
+                    {"label": "Stabilize flow", "set": {"resonance": {"dec": 1}}},
                 ],
                 "weight": 1.2,
             },
@@ -128,16 +104,14 @@ def llm_suggest_storylets(n: int, themes: List[str], bible: Dict[str, Any]) -> L
                 "requires": {"has_crystal": True},
                 "choices": [
                     {"label": "Attune to frequencies", "set": {"energy": {"inc": 1}}},
-                    {"label": "Preserve the harmony",     "set": {}},
+                    {"label": "Preserve the harmony", "set": {}},
                 ],
                 "weight": 1.0,
             },
         ]
         return base[:max(1, int(n or 1))]
-        
-    # Call OpenAI API with enhanced feedback-aware prompting
-    from openai import OpenAI
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    client, model = get_llm()
 
     # Build context-aware system prompt
     system_prompt = build_feedback_aware_prompt(bible)
@@ -152,7 +126,7 @@ def llm_suggest_storylets(n: int, themes: List[str], bible: Dict[str, Any]) -> L
     }
 
     response = client.chat.completions.create(
-        model=os.getenv("MODEL", "gpt-4o"),
+        model=model,
         response_format={"type": "json_object"},
         messages=[
             {"role": "system", "content": system_prompt},
@@ -320,7 +294,7 @@ def generate_world_storylets(description: str, theme: str, player_role: str = "a
         key_elements = []
     
     # Fast path: avoid network during tests or when AI is disabled
-    if os.getenv("DW_FAST_TEST") == "1" or os.getenv("DW_DISABLE_AI") == "1" or os.getenv("PYTEST_CURRENT_TEST"):
+    if not ai_available():
         return [
             {
                 "title": f"A New {theme.title()} Beginning",
@@ -335,8 +309,7 @@ def generate_world_storylets(description: str, theme: str, player_role: str = "a
         ]
 
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        client, model = get_llm()
         
         # Build the world generation prompt
         world_prompt = f"""You are a master interactive fiction writer creating a dynamic, interconnected story world.
@@ -382,7 +355,7 @@ Return EXACTLY {count} storylets in this JSON format:
 Focus on creating an interconnected web of storylets where choices in one storylet unlock or influence others. Make the world feel alive and responsive to player choices."""
 
         response = client.chat.completions.create(
-            model=os.getenv("MODEL", "gpt-4o"),
+            model=model,
             messages=[
                 {"role": "system", "content": "You are an expert interactive fiction world builder. Create interconnected storylets that form a cohesive narrative ecosystem."},
                 {"role": "user", "content": world_prompt}
@@ -474,7 +447,7 @@ def generate_starting_storylet(world_description, available_locations: list, wor
     """Generate a perfect starting storylet based on the actual generated world."""
     
     # Fast path: avoid network during tests or when AI is disabled
-    if os.getenv("DW_FAST_TEST") == "1" or os.getenv("DW_DISABLE_AI") == "1" or os.getenv("PYTEST_CURRENT_TEST"):
+    if not ai_available():
         return {
             "title": "A New Beginning",
             "text": f"You begin your adventure as a {{player_role}} in the world of {world_description.theme}.",
@@ -485,8 +458,7 @@ def generate_starting_storylet(world_description, available_locations: list, wor
         }
 
     try:
-        from openai import OpenAI
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        client, model = get_llm()
         
         # Build context about the generated world
         locations_text = ", ".join(available_locations) if available_locations else "various locations"
@@ -528,7 +500,7 @@ Return EXACTLY this JSON format:
 Make this feel like a natural, immersive beginning to THIS specific world, not a generic adventure start."""
 
         response = client.chat.completions.create(
-            model=os.getenv("MODEL", "gpt-4o"),
+            model=model,
             messages=[
                 {"role": "system", "content": "You are an expert at creating immersive, world-specific story openings that perfectly match the generated content."},
                 {"role": "user", "content": starting_prompt}
